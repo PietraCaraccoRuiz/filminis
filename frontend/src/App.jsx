@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { apiService } from "./services/api";
 
 import Navigation from "./components/Common/Navigation";
@@ -24,7 +24,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Carrega token ao abrir app
+  // Carrega usuário ao iniciar
   useEffect(() => {
     const token = localStorage.getItem("authToken");
 
@@ -36,7 +36,7 @@ function App() {
     (async () => {
       try {
         const data = await apiService.request("/me");
-        setUser(data.user);
+        setUser(data);   // 🔥 CORREÇÃO AQUI!
       } catch (err) {
         apiService.logout();
         setUser(null);
@@ -46,22 +46,11 @@ function App() {
     })();
   }, []);
 
-  const handleLogin = (userData) => setUser(userData);
-  const handleRegister = () => {}; // opcional, registro só avisa sucesso
-  const handleLogout = () => {
-    apiService.logout();
-    setUser(null);
-  };
-
   const ProtectedRoute = ({ children }) =>
     user ? children : <Navigate to="/login" replace />;
 
   const AdminRoute = ({ children }) =>
-    user && user.tipo === "admin" ? (
-      children
-    ) : (
-      <Navigate to="/" replace />
-    );
+    user && user.tipo === "admin" ? children : <Navigate to="/" replace />;
 
   if (loading) {
     return (
@@ -74,43 +63,35 @@ function App() {
   }
 
   return (
-    <Router>
+    <BrowserRouter
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
       <div className="app-wrapper">
-        {user && <Navigation user={user} onLogout={handleLogout} />}
+        {user && (
+          <Navigation
+            user={user}
+            onLogout={() => {
+              apiService.logout();
+              setUser(null);
+            }}
+          />
+        )}
 
         <main className="main-content">
           <Routes>
-            {/* LOGIN */}
             <Route
               path="/login"
-              element={
-                !user ? (
-                  <Login
-                    onLogin={handleLogin}
-                    onSwitchToRegister={() => <Navigate to="/register" replace />}
-                  />
-                ) : (
-                  <Navigate to="/" replace />
-                )
-              }
+              element={!user ? <Login onLogin={setUser} /> : <Navigate to="/" replace />}
             />
 
-            {/* REGISTER */}
             <Route
               path="/register"
-              element={
-                !user ? (
-                  <Register
-                    onRegister={handleRegister}
-                    onSwitchToLogin={() => <Navigate to="/login" replace />}
-                  />
-                ) : (
-                  <Navigate to="/" replace />
-                )
-              }
+              element={!user ? <Register /> : <Navigate to="/" replace />}
             />
 
-            {/* ROTAS PROTEGIDAS */}
             <Route
               path="/"
               element={
@@ -138,66 +119,18 @@ function App() {
               }
             />
 
-            <Route
-              path="/generos"
-              element={
-                <ProtectedRoute>
-                  <GenreList user={user} />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/generos" element={<ProtectedRoute><GenreList user={user} /></ProtectedRoute>} />
+            <Route path="/paises" element={<ProtectedRoute><CountryList user={user} /></ProtectedRoute>} />
+            <Route path="/produtoras" element={<ProtectedRoute><StudioList user={user} /></ProtectedRoute>} />
+            <Route path="/idiomas" element={<ProtectedRoute><LanguageList user={user} /></ProtectedRoute>} />
+            <Route path="/diretores" element={<ProtectedRoute><DirectorList user={user} /></ProtectedRoute>} />
+            <Route path="/dubladores" element={<ProtectedRoute><ActorList user={user} /></ProtectedRoute>} />
 
-            <Route
-              path="/paises"
-              element={
-                <ProtectedRoute>
-                  <CountryList user={user} />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/produtoras"
-              element={
-                <ProtectedRoute>
-                  <StudioList user={user} />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/idiomas"
-              element={
-                <ProtectedRoute>
-                  <LanguageList user={user} />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/diretores"
-              element={
-                <ProtectedRoute>
-                  <DirectorList user={user} />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/dubladores"
-              element={
-                <ProtectedRoute>
-                  <ActorList user={user} />
-                </ProtectedRoute>
-              }
-            />
-
-            {/* FALLBACK */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
       </div>
-    </Router>
+    </BrowserRouter>
   );
 }
 
