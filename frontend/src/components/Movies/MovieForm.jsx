@@ -11,14 +11,17 @@ const MovieForm = ({ movie, movieId, onSubmit, onClose }) => {
     ano: '',
     poster_url: ''
   });
+
   const [relations, setRelations] = useState({
     genero: [], diretor: [], dublador: [],
     produtora: [], linguagem: [], pais: []
   });
+
   const [availableEntities, setAvailableEntities] = useState({
     genero: [], diretor: [], dublador: [],
     produtora: [], linguagem: [], pais: []
   });
+
   const [loading, setLoading] = useState(false);
   const [loadingMovie, setLoadingMovie] = useState(!!movieId);
   const [error, setError] = useState('');
@@ -37,6 +40,7 @@ const MovieForm = ({ movie, movieId, onSubmit, onClose }) => {
         ano: movie.ano || '',
         poster_url: movie.poster_url || ''
       });
+
       if (movie.id_filme) loadMovieRelations(movie.id_filme);
     }
   }, [movie]);
@@ -63,8 +67,7 @@ const MovieForm = ({ movie, movieId, onSubmit, onClose }) => {
     try {
       const relationsData = await apiService.getMovieRelations(id);
       setRelations(relationsData);
-    } catch (err) {
-      console.error('Erro ao carregar relacionamentos:', err);
+    } catch {
       setRelations({
         genero: [], diretor: [], dublador: [],
         produtora: [], linguagem: [], pais: []
@@ -91,27 +94,19 @@ const MovieForm = ({ movie, movieId, onSubmit, onClose }) => {
         linguagem: entities[4],
         pais: entities[5]
       });
-    } catch (err) {
-      console.error('Erro ao carregar entidades:', err);
-    }
+    } catch {}
   };
 
-  const handleRelationChange = (relationType, entityId, checked) => {
+  const handleRelationChange = (type, id, checked) => {
     setRelations(prev => {
-      const currentRelations = prev[relationType] || [];
-      if (checked) {
-        return {
-          ...prev,
-          [relationType]: [...currentRelations, { [`id_${relationType}`]: entityId }]
-        };
-      } else {
-        return {
-          ...prev,
-          [relationType]: currentRelations.filter(
-            rel => rel[`id_${relationType}`] !== entityId
-          )
-        };
-      }
+      const current = prev[type] || [];
+
+      return {
+        ...prev,
+        [type]: checked
+          ? [...current, { [`id_${type}`]: id }]
+          : current.filter(rel => rel[`id_${type}`] !== id)
+      };
     });
   };
 
@@ -121,38 +116,17 @@ const MovieForm = ({ movie, movieId, onSubmit, onClose }) => {
     setError('');
 
     try {
-      const submitData = {
+      const prepared = {
         ...formData,
         orcamento: formData.orcamento ? parseFloat(formData.orcamento) : null,
         ano: formData.ano ? parseInt(formData.ano) : null
       };
-      await onSubmit(submitData, relations);
+
+      await onSubmit(prepared, relations);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const getEntityName = (relationType, entityId) => {
-    const entities = availableEntities[relationType] || [];
-    const entity = entities.find(e => e[`id_${relationType}`] === entityId);
-    if (!entity) return 'N/A';
-    switch (relationType) {
-      case 'genero': return entity.nome_genero;
-      case 'diretor': return `${entity.nome} ${entity.sobrenome}`.trim();
-      case 'dublador': return `${entity.nome} ${entity.sobrenome}`.trim();
-      case 'produtora': return entity.nome_produtora;
-      case 'linguagem': return entity.nome_linguagem;
-      case 'pais': return entity.nome_pais;
-      default: return 'N/A';
     }
   };
 
@@ -169,153 +143,162 @@ const MovieForm = ({ movie, movieId, onSubmit, onClose }) => {
 
   if (loadingMovie) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div className="card p-8">
-          <div className="text-center">Carregando filme...</div>
+      <div className="modal-overlay">
+        <div className="modal-card">
+          Carregando filme...
         </div>
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="card w-full max-h-[90vh] overflow-y-auto">
-        <div className="card-header flex justify-between items-center">
-          <h2 className="text-xl">
-            {movie || movieId ? 'Editar Filme' : 'Adicionar Filme'}
+    <div className="modal-overlay">
+      <div className="modal-card">
+
+        {/* HEADER */}
+        <div className="card-header modal-header">
+          <h2 className="modal-title">
+            {movie || movieId ? "Editar Filme" : "Adicionar Filme"}
           </h2>
-          <button onClick={onClose} className="btn btn-outline btn-sm">×</button>
+          <button onClick={onClose} className="btn-outline btn-sm">×</button>
         </div>
 
-        <div className="card-body">
-          {error && <div className="alert alert-error mb-4">{error}</div>}
+        <div className="card-body modal-body">
+          {error && <div className="alert-error mb-2">{error}</div>}
 
           <form onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+
+            {/* CAMPOS DO FILME */}
+            <div className="form-grid">
+
               <div className="form-group">
-                <label htmlFor="titulo" className="form-label">Título *</label>
+                <label className="form-label">Título *</label>
                 <input
                   type="text"
-                  id="titulo"
                   name="titulo"
-                  value={formData.titulo}
-                  onChange={handleChange}
                   className="form-input"
                   required
+                  value={formData.titulo}
+                  onChange={(e) =>
+                    setFormData({ ...formData, titulo: e.target.value })
+                  }
                 />
               </div>
 
               <div className="form-group">
-                <label htmlFor="ano" className="form-label">Ano</label>
+                <label className="form-label">Ano</label>
                 <input
                   type="number"
-                  id="ano"
                   name="ano"
-                  value={formData.ano}
-                  onChange={handleChange}
                   className="form-input"
                   min="1900"
                   max={currentYear}
-                  placeholder={currentYear.toString()}
+                  value={formData.ano}
+                  onChange={(e) =>
+                    setFormData({ ...formData, ano: e.target.value })
+                  }
                 />
               </div>
 
               <div className="form-group">
-                <label htmlFor="orcamento" className="form-label">Orçamento (USD)</label>
+                <label className="form-label">Orçamento (USD)</label>
                 <input
                   type="number"
-                  id="orcamento"
                   name="orcamento"
-                  value={formData.orcamento}
-                  onChange={handleChange}
                   className="form-input"
-                  min="0"
-                  step="1000000"
-                  placeholder="50000000"
+                  value={formData.orcamento}
+                  onChange={(e) =>
+                    setFormData({ ...formData, orcamento: e.target.value })
+                  }
                 />
               </div>
 
               <div className="form-group">
-                <label htmlFor="tempo_duracao" className="form-label">Duração</label>
+                <label className="form-label">Duração (HH:MM:SS)</label>
                 <input
                   type="text"
-                  id="tempo_duracao"
                   name="tempo_duracao"
-                  value={formData.tempo_duracao}
-                  onChange={handleChange}
                   className="form-input"
-                  placeholder="02:15:00"
+                  value={formData.tempo_duracao}
+                  onChange={(e) =>
+                    setFormData({ ...formData, tempo_duracao: e.target.value })
+                  }
                 />
-                <div className="form-error text-xs mt-1">Formato: HH:MM:SS</div>
               </div>
 
-              <div className="form-group md:col-span-2">
-                <label htmlFor="poster_url" className="form-label">URL do Poster</label>
+              <div className="form-group full-width">
+                <label className="form-label">URL do Poster</label>
                 <input
                   type="url"
-                  id="poster_url"
                   name="poster_url"
-                  value={formData.poster_url}
-                  onChange={handleChange}
                   className="form-input"
-                  placeholder="https://exemplo.com/poster.jpg"
+                  value={formData.poster_url}
+                  onChange={(e) =>
+                    setFormData({ ...formData, poster_url: e.target.value })
+                  }
                 />
               </div>
             </div>
 
-            <div className="border-t border-border-color pt-6">
-              <h3 className="text-lg font-semibold mb-4">Relacionamentos</h3>
+            <div className="section-divider"></div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {Object.entries(relationConfig).map(([relationType, config]) => (
-                  <div key={relationType} className="form-group">
-                    <label className="form-label flex items-center gap-2">
-                      <span>{config.icon}</span>
-                      {config.label}
-                    </label>
+            {/* RELACIONAMENTOS */}
+            <h3 className="section-title">Relacionamentos</h3>
 
-                    <div className="max-h-32 overflow-y-auto border border-border-color rounded-md p-2">
-                      {availableEntities[relationType]?.length === 0 ? (
-                        <p className="text-muted text-sm">Nenhum {config.label.toLowerCase()} disponível</p>
-                      ) : (
-                        availableEntities[relationType]?.map(entity => {
-                          const isChecked = relations[relationType]?.some(
-                            rel => rel[`id_${relationType}`] === entity[`id_${relationType}`]
-                          );
+            <div className="relation-grid">
+              {Object.entries(relationConfig).map(([type, cfg]) => (
+                <div key={type} className="relation-box">
 
-                          return (
-                            <label key={entity[`id_${relationType}`]} className="flex items-center gap-2 py-1">
-                              <input
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={(e) =>
-                                  handleRelationChange(
-                                    relationType,
-                                    entity[`id_${relationType}`],
-                                    e.target.checked
-                                  )
-                                }
-                                className="rounded border-border-color"
-                              />
-                              <span className="text-sm">
-                                {getEntityName(relationType, entity[`id_${relationType}`])}
-                              </span>
-                            </label>
-                          );
-                        })
-                      )}
-                    </div>
+                  <label className="relation-label">
+                    {cfg.icon} {cfg.label}
+                  </label>
+
+                  <div className="relation-list">
+                    {availableEntities[type]?.length === 0 ? (
+                      <p className="empty-text">Nenhum {cfg.label.toLowerCase()} disponível</p>
+                    ) : (
+                      availableEntities[type].map(entity => {
+                        const id = entity[`id_${type}`];
+                        const checked = relations[type]?.some(
+                          rel => rel[`id_${type}`] === id
+                        );
+
+                        return (
+                          <label key={id} className="checkbox-line">
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={(e) =>
+                                handleRelationChange(type, id, e.target.checked)
+                              }
+                            />
+                            <span>
+                              {type === "genero" && entity.nome_genero}
+                              {type === "diretor" && `${entity.nome} ${entity.sobrenome}`}
+                              {type === "dublador" && `${entity.nome} ${entity.sobrenome}`}
+                              {type === "produtora" && entity.nome_produtora}
+                              {type === "linguagem" && entity.nome_linguagem}
+                              {type === "pais" && entity.nome_pais}
+                            </span>
+                          </label>
+                        );
+                      })
+                    )}
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
 
-            <div className="flex gap-2 justify-end mt-6">
-              <button type="button" onClick={onClose} className="btn btn-outline">Cancelar</button>
-              <button type="submit" disabled={loading} className="btn btn-primary">
-                {loading ? 'Salvando...' : (movie || movieId ? 'Atualizar' : 'Criar')}
+            <div className="modal-footer">
+              <button type="button" onClick={onClose} className="btn-outline">
+                Cancelar
+              </button>
+
+              <button type="submit" disabled={loading} className="btn-primary">
+                {loading ? "Salvando..." : movie || movieId ? "Atualizar" : "Criar"}
               </button>
             </div>
+
           </form>
         </div>
       </div>

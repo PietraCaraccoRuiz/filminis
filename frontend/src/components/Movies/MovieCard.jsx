@@ -13,7 +13,8 @@ const MovieCard = ({ movie, user, onEdit, onDelete }) => {
 
   const formatDuration = (duration) => {
     if (!duration) return 'N/A';
-    return duration.split(':').slice(0, 2).join(':');
+    const [h, m] = duration.split(':');
+    return `${h}h ${m}m`;
   };
 
   const handleCardClick = () => {
@@ -21,77 +22,78 @@ const MovieCard = ({ movie, user, onEdit, onDelete }) => {
   };
 
   return (
-    <div className="card hover:shadow-md transition-shadow cursor-pointer">
-      {/* Poster clicável */}
-      <div 
-        onClick={handleCardClick}
-        className="aspect-w-2 aspect-h-3 cursor-pointer"
-      >
+    <div 
+      className="movie-card cursor-pointer"
+      onClick={handleCardClick}
+    >
+      {/* Poster */}
+      <div className="poster-wrapper">
         <img
           src={movie.poster_url}
           alt={movie.titulo}
-          className="w-full h-48 object-cover rounded-t-lg"
+          className="poster-img"
         />
       </div>
-      
+
+      {/* Conteúdo */}
       <div className="card-body">
-        {/* Título clicável */}
-        <h3 
-          onClick={handleCardClick}
-          className="text-lg font-semibold mb-2 line-clamp-2 cursor-pointer hover:text-primary-color transition-colors"
-        >
+
+        {/* Título */}
+        <h3 className="movie-title" onClick={handleCardClick}>
           {movie.titulo}
         </h3>
-        
-        <div className="space-y-2 text-sm text-muted">
-          <div className="flex justify-between">
-            <span>Ano:</span>
-            <span>{movie.ano || 'N/A'}</span>
+
+        {/* Informações */}
+        <div className="info-wrapper">
+          <div className="info-line">
+            <span className="info-label">Ano:</span>
+            <span className="info-value">{movie.ano || 'N/A'}</span>
           </div>
-          
-          <div className="flex justify-between">
-            <span>Duração:</span>
-            <span>{formatDuration(movie.tempo_duracao)}</span>
+
+          <div className="info-line">
+            <span className="info-label">Duração:</span>
+            <span className="info-value">{formatDuration(movie.tempo_duracao)}</span>
           </div>
-          
-          <div className="flex justify-between">
-            <span>Orçamento:</span>
-            <span>{movie.orcamento ? formatCurrency(movie.orcamento) : 'N/A'}</span>
+
+          <div className="info-line">
+            <span className="info-label">Orçamento:</span>
+            <span className="info-value">
+              {movie.orcamento ? formatCurrency(movie.orcamento) : 'N/A'}
+            </span>
           </div>
         </div>
 
-        {/* Botões de ação */}
-        <div className="flex gap-2 mt-4 pt-4 border-t border-border-color">
-          <button
-            onClick={handleCardClick}
-            className="btn btn-outline btn-sm flex-1"
-          >
+        {/* Botões */}
+        <div className="action-wrapper">
+          <button className="btn-outline flex-1" onClick={handleCardClick}>
             Ver Detalhes
           </button>
-          
+
           {user.tipo === 'admin' && (
             <>
               <button
+                className="btn-outline flex-1"
                 onClick={(e) => {
                   e.stopPropagation();
                   onEdit(movie);
                 }}
-                className="btn btn-outline btn-sm flex-1"
               >
                 Editar
               </button>
+
               <button
+                className="btn-danger flex-1"
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(movie.id_filme);
                 }}
-                className="btn btn-danger btn-sm flex-1"
               >
                 Excluir
               </button>
             </>
           )}
         </div>
+
       </div>
     </div>
   );

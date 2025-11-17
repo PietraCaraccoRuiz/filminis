@@ -1,191 +1,235 @@
-const API_BASE = '/api';
+const API_BASE = "http://localhost:8000"; // sem /api e direto no backend
 
 class ApiService {
-    constructor() {
-        this.token = localStorage.getItem('authToken');
+  constructor() {
+    this.token = localStorage.getItem("authToken") || null;
+  }
+
+  // -------------------------------
+  // TOKEN
+  // -------------------------------
+  setToken(token) {
+    this.token = token;
+    if (token) localStorage.setItem("authToken", token);
+    else localStorage.removeItem("authToken");
+  }
+
+  clearAuth() {
+    this.token = null;
+    localStorage.removeItem("authToken");
+  }
+
+  // -------------------------------
+  // REQUEST WRAPPER
+  // -------------------------------
+  async request(endpoint, options = {}) {
+    const url = `${API_BASE}${endpoint}`;
+
+    const config = {
+      method: options.method || "GET",
+      headers: {
+        ...(options.headers || {}),
+      },
+    };
+
+    // só coloca JSON quando tiver body
+    if (options.body) {
+      config.headers["Content-Type"] = "application/json";
+      config.body = JSON.stringify(options.body);
     }
 
-    setToken(token) {
-        this.token = token;
-        if (token) {
-            localStorage.setItem('authToken', token);
-        } else {
-            localStorage.removeItem('authToken');
-        }
+    // JWT
+    if (this.token) {
+      config.headers.Authorization = `Bearer ${this.token}`;
     }
 
-    async request(endpoint, options = {}) {
-        const url = `${API_BASE}${endpoint}`;
-        const config = {
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers,
-            },
-            ...options,
-        };
-
-        if (this.token) {
-            config.headers.Authorization = `Bearer ${this.token}`;
-        }
-
-        try {
-            const response = await fetch(url, config);
-            let data;
-
-            if (response.status !== 204) {
-                const text = await response.text();
-                data = text ? JSON.parse(text) : null;
-            }
-
-            if (!response.ok) {
-                throw new Error(data?.error || `HTTP error! status: ${response.status}`);
-            }
-
-            return data;
-        } catch (error) {
-            console.error('API Request failed:', error);
-            throw error;
-        }
-    }
-
-    // Auth endpoints
-    async login(username, password) {
-        const data = await this.request('/login', {
-            method: 'POST',
-            body: JSON.stringify({ username, password }),
-        });
-        if (data.token) {
-            this.setToken(data.token);
-        }
-        return data;
-    }
-
-    async register(username, email, password) {
-        return this.request('/register', {
-            method: 'POST',
-            body: JSON.stringify({ username, email, password }),
-        });
-    }
-
-    async logout() {
-        try {
-            await this.request('/logout', { method: 'POST' });
-        } catch (error) {
-            console.error('Logout error:', error);
-        } finally {
-            this.setToken(null);
-        }
-    }
-
-    // CRUD operations
-    async getEntities(entity) {
-        return this.request(`/${entity}`);
-    }
-
-    async getEntity(entity, id) {
-        return this.request(`/${entity}/${id}`);
-    }
-
-    async createEntity(entity, data) {
-        return this.request(`/${entity}`, {
-            method: 'POST',
-            body: JSON.stringify(data),
-        });
-    }
-
-    async updateEntity(entity, id, data) {
-        return this.request(`/${entity}/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(data),
-        });
-    }
-
-    async deleteEntity(entity, id) {
-        return this.request(`/${entity}/${id}`, {
-            method: 'DELETE',
-        });
-    }
-    async getMovieRelations(movieId) {
-        const relations = {};
-
-        const relationTables = [
-            'filme_genero', 'filme_diretor', 'filme_dublador',
-            'filme_produtora', 'filme_linguagem', 'filme_pais'
-        ];
-
-        for (const table of relationTables) {
-            try {
-                const result = await this.request(`/${table}/${movieId}`);
-                relations[table.replace('filme_', '')] = result || [];
-            } catch (error) {
-                relations[table.replace('filme_', '')] = [];
-            }
-        }
-
-        return relations;
-    }
-
-
-    async addMovieRelation(movieId, relationType, relatedId) {
-        return this.request(`/filme_${relationType}`, {
-            method: 'POST',
-            body: JSON.stringify({
-                id_filme: movieId,
-                [`id_${relationType}`]: relatedId
-            }),
-        });
-    }
-
-
-    async removeMovieRelation(movieId, relationType, relatedId) {
-        return this.request(`/filme_${relationType}/${movieId}/${relatedId}`, {
-            method: 'DELETE',
-        });
-    }
-
-    async getRelatedEntities(movieId, entityType) {
-        return this.request(`/filme_${entityType}/${movieId}`);
-    }
-
-    async updateMovieRelations(movieId, relations) {
-  const results = [];
-  
-  for (const [relationType, items] of Object.entries(relations)) {
     try {
-      // Primeiro, remover todas as relações existentes deste tipo
-      const currentRelations = await this.getRelatedEntities(movieId, relationType);
-      
-      // Remover relações que não estão mais na lista
-      for (const currentRelation of currentRelations) {
-        const shouldKeep = items.some(
-          newRel => newRel[`id_${relationType}`] === currentRelation[`id_${relationType}`]
-        );
-        
-        if (!shouldKeep) {
-          await this.removeMovieRelation(movieId, relationType, currentRelation[`id_${relationType}`]);
+      const res = await fetch(url, config);
+
+      const raw = await res.text();
+      let data = null;
+
+      if (raw) {
+        try {
+          data = JSON.parse(raw);
+        } catch {
+          // se o back devolver HTML ou texto, não quebra o front
+          data = null;
         }
       }
-      
-      // Adicionar novas relações
-      for (const newRelation of items) {
-        const exists = currentRelations.some(
-          currentRel => currentRel[`id_${relationType}`] === newRelation[`id_${relationType}`]
-        );
-        
-        if (!exists) {
-          await this.addMovieRelation(movieId, relationType, newRelation[`id_${relationType}`]);
-        }
+
+      if (res.status === 401) {
+        this.clearAuth();
+        throw new Error("Sessão expirada, faça login novamente.");
       }
-      
-      results.push({ relationType, success: true });
-    } catch (error) {
-      console.error(`Erro ao atualizar ${relationType}:`, error);
-      results.push({ relationType, success: false, error: error.message });
+
+      if (!res.ok) {
+        throw new Error(data?.error || `Erro HTTP ${res.status}`);
+      }
+
+      return data;
+    } catch (err) {
+      console.error("API Request failed →", err);
+      throw err;
     }
   }
-  
-  return results;
-}
+
+  // -------------------------------
+  // AUTH
+  // -------------------------------
+  async login(username, password) {
+    const data = await this.request("/login", {
+      method: "POST",
+      body: { username, password },
+    });
+
+    if (!data?.token) {
+      throw new Error("Resposta inválida da API.");
+    }
+
+    this.setToken(data.token);
+    return data.user;
+  }
+
+  async register(username, email, password) {
+    return this.request("/register", {
+      method: "POST",
+      body: { username, email, password },
+    });
+  }
+
+  async logout() {
+    try {
+      await this.request("/logout", { method: "POST" });
+    } catch (e) {
+      console.warn("Logout forçado:", e.message);
+    }
+    this.clearAuth();
+  }
+
+  async getMe() {
+    return this.request("/me");
+  }
+
+  // -------------------------------
+  // CRUD BASE
+  // -------------------------------
+  getEntities(entity) {
+    return this.request(`/${entity}`);
+  }
+
+  getEntity(entity, id) {
+    return this.request(`/${entity}/${id}`);
+  }
+
+  createEntity(entity, data) {
+    return this.request(`/${entity}`, {
+      method: "POST",
+      body: data,
+    });
+  }
+
+  updateEntity(entity, id, data) {
+    return this.request(`/${entity}/${id}`, {
+      method: "PUT",
+      body: data,
+    });
+  }
+
+  deleteEntity(entity, id) {
+    return this.request(`/${entity}/${id}`, {
+      method: "DELETE",
+    });
+  }
+
+  // -------------------------------
+  // FILME - RELAÇÕES
+  // -------------------------------
+  async getMovieRelations(movieId) {
+    const tables = [
+      "filme_genero",
+      "filme_diretor",
+      "filme_dublador",
+      "filme_produtora",
+      "filme_linguagem",
+      "filme_pais",
+    ];
+
+    const relations = {};
+
+    for (const table of tables) {
+      try {
+        const res = await this.request(`/${table}/${movieId}`);
+        relations[table.replace("filme_", "")] = res || [];
+      } catch {
+        relations[table.replace("filme_", "")] = [];
+      }
+    }
+
+    return relations;
+  }
+
+  addMovieRelation(movieId, relationType, relatedId) {
+    return this.request(`/filme_${relationType}`, {
+      method: "POST",
+      body: {
+        id_filme: movieId,
+        [`id_${relationType}`]: relatedId,
+      },
+    });
+  }
+
+  removeMovieRelation(movieId, relationType, relatedId) {
+    return this.request(`/filme_${relationType}/${movieId}/${relatedId}`, {
+      method: "DELETE",
+    });
+  }
+
+  getRelatedEntities(movieId, relationType) {
+    return this.request(`/filme_${relationType}/${movieId}`);
+  }
+
+  async updateMovieRelations(movieId, relations) {
+    const results = [];
+
+    for (const [relationType, items] of Object.entries(relations)) {
+      const existing = await this.getRelatedEntities(movieId, relationType);
+
+      // remover os que saíram
+      for (const old of existing) {
+        const stillExists = items.some(
+          (i) => i[`id_${relationType}`] === old[`id_${relationType}`]
+        );
+
+        if (!stillExists) {
+          await this.removeMovieRelation(
+            movieId,
+            relationType,
+            old[`id_${relationType}`]
+          );
+        }
+      }
+
+      // adicionar novos
+      for (const item of items) {
+        const alreadyExists = existing.some(
+          (o) => o[`id_${relationType}`] === item[`id_${relationType}`]
+        );
+
+        if (!alreadyExists) {
+          await this.addMovieRelation(
+            movieId,
+            relationType,
+            item[`id_${relationType}`]
+          );
+        }
+      }
+
+      results.push({ relationType, success: true });
+    }
+
+    return results;
+  }
 }
 
 export const apiService = new ApiService();

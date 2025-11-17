@@ -4,7 +4,6 @@ import MovieCard from "./MovieCard";
 import MovieForm from "./MovieForm";
 import { motion } from "framer-motion";
 
-// 🔥 Mesmo motion usado no GenreList
 const fadeCard = {
   hidden: { opacity: 0, filter: "blur(6px)", scale: 0.97 },
   show: {
@@ -16,7 +15,7 @@ const fadeCard = {
 };
 
 const MovieList = ({ user }) => {
-  const [movies, setMovies] = useState([]);
+  const [movies, setMovies] = useState([]); // sempre array
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -29,10 +28,21 @@ const MovieList = ({ user }) => {
   const loadMovies = async () => {
     try {
       setLoading(true);
+      setError("");
+
       const data = await apiService.getEntities("filme");
-      setMovies(data);
+
+      // blindagem total: garante lista SEMPRE
+      if (!Array.isArray(data)) {
+        console.warn("API retornou algo inesperado em /filme:", data);
+        setMovies([]);
+      } else {
+        setMovies(data);
+      }
+
     } catch (err) {
       setError("Erro ao carregar filmes: " + err.message);
+      setMovies([]); // nunca deixa null entrar no render
     } finally {
       setLoading(false);
     }
@@ -63,6 +73,7 @@ const MovieList = ({ user }) => {
       }
 
       setEditingMovie(null);
+      setShowForm(false);
       loadMovies();
     } catch (err) {
       throw new Error("Erro ao atualizar filme: " + err.message);
@@ -80,91 +91,106 @@ const MovieList = ({ user }) => {
     }
   };
 
+  // ===============================
+  // LOADING
+  // ===============================
   if (loading) {
     return (
-      <div className="flex justify-center items-center p-8">
-        <motion.div
-          className="text-lg"
-          animate={{ opacity: [0.3, 1, 0.3] }}
-          transition={{ repeat: Infinity, duration: 1.5 }}
-        >
-          Carregando filmes...
-        </motion.div>
+      <div className="page-wrapper">
+        <div className="loading-card">
+          <motion.div
+            animate={{ opacity: [0.3, 1, 0.3] }}
+            transition={{ repeat: Infinity, duration: 1.5 }}
+            className="loading-text"
+          >
+            Carregando filmes...
+          </motion.div>
+        </div>
       </div>
     );
   }
 
+  const movieCount = Array.isArray(movies) ? movies.length : 0;
+
   return (
-    <div className="container p-4 flex flex-col gap-4">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl">Catálogo de Filmes</h1>
-          <p className="text-muted">
-            {movies.length} filme{movies.length !== 1 ? "s" : ""} encontrado
-          </p>
-        </div>
+    <div className="page-wrapper">
+      <div className="content-container">
 
-        {user.tipo === "admin" && (
-          <button className="btn btn-primary" onClick={() => setShowForm(true)}>
-            Adicionar Filme
-          </button>
-        )}
-      </div>
+        {/* HEADER */}
+        <div className="content-header">
+          <div>
+            <h1 className="page-title">Catálogo de Filmes</h1>
+            <p className="text-muted">
+              {movieCount} filme{movieCount !== 1 ? "s" : ""} encontrado
+            </p>
+          </div>
 
-      {error && <div className="alert alert-error mb-4">{error}</div>}
-
-      {showForm && (
-        <MovieForm
-          movie={editingMovie}
-          onSubmit={
-            editingMovie
-              ? (data) => handleUpdate(editingMovie.id_filme, data)
-              : handleCreate
-          }
-          onClose={() => {
-            setShowForm(false);
-            setEditingMovie(null);
-          }}
-        />
-      )}
-
-      {movies.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0, filter: "blur(6px)", scale: 0.97 }}
-          animate={{ opacity: 1, filter: "blur(0px)", scale: 1 }}
-          transition={{ duration: 0.45 }}
-          className="card text-center p-8"
-        >
-          <h3 className="text-lg mb-2">Nenhum filme encontrado</h3>
-
-          {user.tipo === "admin" && (
-            <button className="btn btn-primary" onClick={() => setShowForm(true)}>
-              Adicionar Primeiro Filme
+          {user?.tipo === "admin" && (
+            <button className="btn-primary" onClick={() => setShowForm(true)}>
+              Adicionar Filme
             </button>
           )}
-        </motion.div>
-      ) : (
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          initial="hidden"
-          animate="show"
-          variants={{ hidden: {}, show: { transition: { staggerChildren: 0.09 } } }}
-        >
-          {movies.map((movie) => (
-            <motion.div key={movie.id_filme} variants={fadeCard}>
-              <MovieCard
-                movie={movie}
-                user={user}
-                onEdit={() => {
-                  setEditingMovie(movie);
-                  setShowForm(true);
-                }}
-                onDelete={handleDelete}
-              />
-            </motion.div>
-          ))}
-        </motion.div>
-      )}
+        </div>
+
+        {/* ERROR */}
+        {error && <div className="alert-error mb-2">{error}</div>}
+
+        {/* FORM MODAL */}
+        {showForm && (
+          <MovieForm
+            movie={editingMovie}
+            movieId={editingMovie?.id_filme}
+            onSubmit={
+              editingMovie
+                ? (data, rel) => handleUpdate(editingMovie.id_filme, data, rel)
+                : handleCreate
+            }
+            onClose={() => {
+              setShowForm(false);
+              setEditingMovie(null);
+            }}
+          />
+        )}
+
+        {/* EMPTY STATE */}
+        {movieCount === 0 ? (
+          <motion.div
+            className="card empty-card"
+            initial="hidden"
+            animate="show"
+            variants={fadeCard}
+          >
+            <h3 className="empty-title">Nenhum filme cadastrado</h3>
+
+            {user?.tipo === "admin" && (
+              <button className="btn-primary" onClick={() => setShowForm(true)}>
+                Adicionar Primeiro Filme
+              </button>
+            )}
+          </motion.div>
+        ) : (
+          <motion.div
+            className="grid-custom"
+            initial="hidden"
+            animate="show"
+            variants={{ show: { transition: { staggerChildren: 0.1 } } }}
+          >
+            {(movies ?? []).map((movie) => (
+              <motion.div key={movie.id_filme} variants={fadeCard}>
+                <MovieCard
+                  movie={movie}
+                  user={user}
+                  onEdit={() => {
+                    setEditingMovie(movie);
+                    setShowForm(true);
+                  }}
+                  onDelete={handleDelete}
+                />
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+      </div>
     </div>
   );
 };

@@ -1,17 +1,42 @@
-import React, { useState, useEffect } from 'react';
-import { apiService } from '../../services/api';
+import React, { useState, useEffect } from "react";
+import { apiService } from "../../services/api";
+import { motion } from "framer-motion";
+
+// Ícones oficiais que você usa
+import { FiUser, FiMic, FiGlobe, FiBriefcase } from "react-icons/fi";
+import { MdCategory } from "react-icons/md";
+
+const fadeCard = {
+  hidden: { opacity: 0, filter: "blur(6px)", scale: 0.97 },
+  show: {
+    opacity: 1,
+    filter: "blur(0px)",
+    scale: 1,
+    transition: { duration: 0.45, ease: "easeOut" }
+  }
+};
 
 const MovieRelations = ({ movieId, user, onUpdate }) => {
   const [relations, setRelations] = useState({
-    genero: [], diretor: [], dublador: [],
-    produtora: [], linguagem: [], pais: []
+    genero: [],
+    diretor: [],
+    dublador: [],
+    produtora: [],
+    linguagem: [],
+    pais: []
   });
+
   const [availableEntities, setAvailableEntities] = useState({
-    genero: [], diretor: [], dublador: [],
-    produtora: [], linguagem: [], pais: []
+    genero: [],
+    diretor: [],
+    dublador: [],
+    produtora: [],
+    linguagem: [],
+    pais: []
   });
+
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
     loadData();
@@ -20,19 +45,17 @@ const MovieRelations = ({ movieId, user, onUpdate }) => {
   const loadData = async () => {
     try {
       setLoading(true);
-      
-      // Carregar relacionamentos atuais
+
       const relationsData = await apiService.getMovieRelations(movieId);
       setRelations(relationsData);
 
-      // Carregar entidades disponíveis
       const entities = await Promise.all([
-        apiService.getEntities('genero'),
-        apiService.getEntities('diretor'),
-        apiService.getEntities('dublador'),
-        apiService.getEntities('produtora'),
-        apiService.getEntities('linguagem'),
-        apiService.getEntities('pais')
+        apiService.getEntities("genero"),
+        apiService.getEntities("diretor"),
+        apiService.getEntities("dublador"),
+        apiService.getEntities("produtora"),
+        apiService.getEntities("linguagem"),
+        apiService.getEntities("pais")
       ]);
 
       setAvailableEntities({
@@ -45,157 +68,155 @@ const MovieRelations = ({ movieId, user, onUpdate }) => {
       });
 
     } catch (err) {
-      setError('Erro ao carregar relacionamentos: ' + err.message);
+      setError("Erro ao carregar relacionamentos: " + err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddRelation = async (relationType, entityId) => {
+  const handleAddRelation = async (type, id) => {
     try {
-      await apiService.addMovieRelation(movieId, relationType, entityId);
+      await apiService.addMovieRelation(movieId, type, id);
       await loadData();
-      if (onUpdate) onUpdate();
+      onUpdate && onUpdate();
     } catch (err) {
-      setError(`Erro ao adicionar ${relationType}: ` + err.message);
+      setError(`Erro ao adicionar ${type}: ${err.message}`);
     }
   };
 
-  const handleRemoveRelation = async (relationType, entityId) => {
+  const handleRemoveRelation = async (type, id) => {
     try {
-      await apiService.removeMovieRelation(movieId, relationType, entityId);
+      await apiService.removeMovieRelation(movieId, type, id);
       await loadData();
-      if (onUpdate) onUpdate();
+      onUpdate && onUpdate();
     } catch (err) {
-      setError(`Erro ao remover ${relationType}: ` + err.message);
+      setError(`Erro ao remover ${type}: ${err.message}`);
     }
   };
 
-  const getEntityName = (relationType, entityId) => {
-    const entities = availableEntities[relationType];
-    const entity = entities.find(e => e[`id_${relationType}`] === entityId);
-    
-    if (!entity) return 'N/A';
-    
-    switch (relationType) {
-      case 'genero':
-        return entity.nome_genero;
-      case 'diretor':
-        return `${entity.nome} ${entity.sobrenome}`.trim();
-      case 'dublador':
-        return `${entity.nome} ${entity.sobrenome}`.trim();
-      case 'produtora':
-        return entity.nome_produtora;
-      case 'linguagem':
-        return entity.nome_linguagem;
-      case 'pais':
-        return entity.nome_pais;
-      default:
-        return 'N/A';
+  const getEntityName = (type, id) => {
+    const list = availableEntities[type] || [];
+    const entity = list.find((e) => e[`id_${type}`] === id);
+    if (!entity) return "N/A";
+
+    switch (type) {
+      case "genero": return entity.nome_genero;
+      case "diretor": return `${entity.nome} ${entity.sobrenome}`.trim();
+      case "dublador": return `${entity.nome} ${entity.sobrenome}`.trim();
+      case "produtora": return entity.nome_produtora;
+      case "linguagem": return entity.nome_linguagem;
+      case "pais": return entity.nome_pais;
+      default: return "N/A";
     }
   };
 
-  const relationConfig = {
-    genero: { label: 'Gêneros', icon: '🏷️' },
-    diretor: { label: 'Diretores', icon: '🎬' },
-    dublador: { label: 'Dubladores', icon: '🎤' },
-    produtora: { label: 'Produtoras', icon: '🏢' },
-    linguagem: { label: 'Idiomas', icon: '🗣️' },
-    pais: { label: 'Países', icon: '🌍' }
+  const config = {
+    genero: { label: "Gêneros", icon: <MdCategory /> },
+    diretor: { label: "Diretores", icon: <FiUser /> },
+    dublador: { label: "Dubladores", icon: <FiMic /> },
+    produtora: { label: "Produtoras", icon: <FiBriefcase /> },
+    linguagem: { label: "Idiomas", icon: <FiGlobe /> },
+    pais: { label: "Países", icon: <FiGlobe /> }
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center p-4">
-        <div className="text-lg">Carregando relacionamentos...</div>
-      </div>
+      <motion.div
+        className="card p-4 text-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      >
+        Carregando relacionamentos...
+      </motion.div>
     );
   }
 
   return (
-    <div className="space-y-6 flex flex-col gap-4">
-      {error && (
-        <div className="alert alert-error">
-          {error}
-        </div>
-      )}
+    <motion.div
+      variants={{ show: { transition: { staggerChildren: 0.1 } } }}
+      initial="hidden"
+      animate="show"
+      className="relation-wrapper"
+    >
+      {error && <div className="alert-error mb-2">{error}</div>}
 
-      {Object.entries(relationConfig).map(([relationType, config]) => {
-        const currentRelations = relations[relationType] || [];
-        const availableEntitiesList = availableEntities[relationType] || [];
-        
-        // Filtrar entidades já relacionadas
-        const availableOptions = availableEntitiesList.filter(entity => 
-          !currentRelations.some(rel => 
-            rel[`id_${relationType}`] === entity[`id_${relationType}`]
-          )
+      {Object.entries(config).map(([type, cfg]) => {
+        const current = relations[type] || [];
+        const available = (availableEntities[type] || []).filter(
+          (entity) =>
+            !current.some((rel) => rel[`id_${type}`] === entity[`id_${type}`])
         );
 
         return (
-          <div key={relationType} className="card">
-            <div className="card-header">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <span>{config.icon}</span>
-                {config.label}
+          <motion.div key={type} variants={fadeCard} className="card relation-card">
+            <div className="relation-header">
+              <h3 className="relation-title">
+                {cfg.icon}
+                {cfg.label}
               </h3>
             </div>
-            
-            <div className="card-body">
-              {/* Lista de relacionamentos atuais */}
-              <div className="mb-4">
-                {currentRelations.length === 0 ? (
-                  <p className="text-muted text-sm">Nenhum {config.label.toLowerCase()} adicionado</p>
+
+            <div className="relation-body">
+              {/* LISTA DE RELAÇÕES ATUAIS */}
+              <div className="relation-current-list">
+                {current.length === 0 ? (
+                  <p className="text-muted text-sm">
+                    Nenhum {cfg.label.toLowerCase()} adicionado
+                  </p>
                 ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {currentRelations.map(relation => (
-                      <div
-                        key={relation[`id_${relationType}`]}
-                        className="bg-primary-color bg-opacity-10 text-primary-color px-3 py-1 rounded-full text-sm flex items-center gap-2"
-                      >
-                        {getEntityName(relationType, relation[`id_${relationType}`])}
-                        {user.tipo === 'admin' && (
-                          <button
-                            onClick={() => handleRemoveRelation(relationType, relation[`id_${relationType}`])}
-                            className="text-danger-color hover:text-danger-color hover:bg-white rounded-full w-4 h-4 flex items-center justify-center"
-                          >
-                            ×
-                          </button>
-                        )}
-                      </div>
-                    ))}
+                  <div className="relation-tags">
+                    {current.map((rel) => {
+                      const id = rel[`id_${type}`];
+
+                      return (
+                        <div key={id} className="relation-tag">
+                          {getEntityName(type, id)}
+
+                          {user.tipo === "admin" && (
+                            <button
+                              className="relation-tag-remove"
+                              onClick={() => handleRemoveRelation(type, id)}
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
 
-              {/* Adicionar novo relacionamento (apenas admin) */}
-              {user.tipo === 'admin' && availableOptions.length > 0 && (
-                <div className="flex gap-2 items-center">
-                  <select
-                    className="form-select flex-1 text-sm"
-                    onChange={(e) => {
-                      if (e.target.value) {
-                        handleAddRelation(relationType, parseInt(e.target.value));
-                        e.target.value = '';
-                      }
-                    }}
-                  >
-                    <option value="">Adicionar {config.label.toLowerCase()}...</option>
-                    {availableOptions.map(entity => (
-                      <option 
-                        key={entity[`id_${relationType}`]} 
-                        value={entity[`id_${relationType}`]}
-                      >
-                        {getEntityName(relationType, entity[`id_${relationType}`])}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              {/* ADICIONAR RELAÇÃO */}
+              {user.tipo === "admin" && available.length > 0 && (
+                <select
+                  className="form-select"
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      handleAddRelation(type, parseInt(e.target.value));
+                      e.target.value = "";
+                    }
+                  }}
+                >
+                  <option value="">
+                    Adicionar {cfg.label.toLowerCase()}...
+                  </option>
+
+                  {available.map((entity) => (
+                    <option
+                      key={entity[`id_${type}`]}
+                      value={entity[`id_${type}`]}
+                    >
+                      {getEntityName(type, entity[`id_${type}`])}
+                    </option>
+                  ))}
+                </select>
               )}
             </div>
-          </div>
+          </motion.div>
         );
       })}
-    </div>
+    </motion.div>
   );
 };
 

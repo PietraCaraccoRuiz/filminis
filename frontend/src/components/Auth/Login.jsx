@@ -1,176 +1,171 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { apiService } from '../../services/api';
-import logo from '../../assets/logo.svg';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import logo from "../../assets/logo.svg";
+import { apiService } from "../../services/api";
+
+import { IoEye, IoEyeOff } from "react-icons/io5";
+import { FaRegUser } from "react-icons/fa6";
+import { RiLockPasswordLine } from "react-icons/ri";
 
 const Login = ({ onLogin, onSwitchToRegister }) => {
   const [formData, setFormData] = useState({
-    username: '',
-    password: ''
+    username: "",
+    password: "",
   });
+
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
-      const result = await apiService.login(formData.username, formData.password);
-      onLogin(result.user);
+      const user = await apiService.login(
+        formData.username,
+        formData.password
+      );
+
+      onLogin(user);
     } catch (err) {
-      setError(err.message || 'Erro ao fazer login');
+      setError(err.message || "Erro ao fazer login");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+  const fillDemo = (acc) => {
+    setFormData({ username: acc.username, password: acc.password });
   };
 
   const demoAccounts = [
-    { username: 'admin', password: 'admin123', type: 'Admin' },
-    { username: 'usuario1', password: 'user123', type: 'User' }
+    { username: "admin", password: "admin123", type: "Admin" },
+    { username: "usuario1", password: "user123", type: "User" },
   ];
 
-  const fillDemo = (account) => {
-    setFormData({
-      username: account.username,
-      password: account.password
-    });
-  };
-
-  // Variantes de animação
   const containerVariants = {
-    hidden: { opacity: 0, y: 50, filter: "blur(10px)" },
+    hidden: { opacity: 0, y: 40, filter: "blur(10px)" },
     visible: {
       opacity: 1,
       y: 0,
       filter: "blur(0px)",
-      transition: {
-        duration: 0.6,
-        ease: "easeOut",
-        staggerChildren: 0.1
-      }
-    }
+      transition: { duration: 0.5, staggerChildren: 0.1 },
+    },
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20, filter: "blur(5px)" },
+    hidden: { opacity: 0, y: 15, filter: "blur(6px)" },
     visible: {
       opacity: 1,
       y: 0,
       filter: "blur(0px)",
-      transition: { duration: 0.4 }
-    }
+      transition: { duration: 0.35 },
+    },
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="page-wrapper">
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="container-auth card w-full max-w-md"
+        className="auth-card"
       >
-        <motion.div variants={itemVariants} className="card-header text-center">
-          <h2 className="text-2xl flex items-center justify-center gap-2">
-            <img src={logo} alt="logo" className='logo' />
-            Login</h2>
-          <p className="text-muted">Entre na sua conta</p>
+        <motion.div variants={itemVariants} className="auth-header">
+          <h2 className="title">
+            <img src={logo} className="logo" alt="logo" />
+            Login
+          </h2>
+          <p className="subtitle">Entre na sua conta</p>
         </motion.div>
-        
-        <div className="card-body">
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="alert alert-error"
-            >
-              {error}
-            </motion.div>
-          )}
 
-          <form onSubmit={handleSubmit}>
-            <motion.div variants={itemVariants} className="form-group">
-              <label htmlFor="username" className="form-label">
-                Usuário
-              </label>
-              <motion.input
-                whileFocus={{ scale: 1.01 }}
+        {error && (
+          <motion.div variants={itemVariants} className="alert-error">
+            {error}
+          </motion.div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          {/* USERNAME */}
+          <motion.div variants={itemVariants} className="form-group">
+            <label className="form-label">Usuário</label>
+            <div className="input-icon">
+              <FaRegUser className="left-icon" />
+              <input
                 type="text"
-                id="username"
                 name="username"
+                placeholder="Digite seu usuário"
                 value={formData.username}
-                onChange={handleChange}
-                className="form-input"
+                onChange={(e) =>
+                  setFormData({ ...formData, username: e.target.value })
+                }
                 required
               />
-            </motion.div>
-
-            <motion.div variants={itemVariants} className="form-group">
-              <label htmlFor="password" className="form-label">
-                Senha
-              </label>
-              <motion.input
-                whileFocus={{ scale: 1.01 }}
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className="form-input"
-                required
-              />
-            </motion.div>
-
-            <motion.button
-              variants={itemVariants}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              type="submit"
-              disabled={loading}
-              className="btn btn-primary w-full"
-            >
-              {loading ? 'Entrando...' : 'Entrar'}
-            </motion.button>
-          </form>
-
-          <motion.div variants={itemVariants} className="mt-4">
-            <h4 className="text-sm text-muted mb-2">Contas de Demonstração:</h4>
-            <div className="grid grid-cols-2 gap-2">
-              {demoAccounts.map((account, index) => (
-                <motion.button
-                  key={index}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  type="button"
-                  onClick={() => fillDemo(account)}
-                  className="btn btn-outline btn-sm"
-                >
-                  {account.type}
-                </motion.button>
-              ))}
             </div>
           </motion.div>
 
-          <motion.div variants={itemVariants} className="text-center mt-4">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              type="button"
-              onClick={onSwitchToRegister}
-              className="btn btn-secondary"
-            >
-              Não tem uma conta? Registre-se
-            </motion.button>
+          {/* PASSWORD */}
+          <motion.div variants={itemVariants} className="form-group">
+            <label className="form-label">Senha</label>
+            <div className="input-icon">
+              <RiLockPasswordLine className="left-icon" />
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Digite sua senha"
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+                required
+              />
+              <button
+                type="button"
+                className="right-icon-btn"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <IoEyeOff /> : <IoEye />}
+              </button>
+            </div>
           </motion.div>
-        </div>
+
+          {/* BUTTON */}
+          <motion.button
+            variants={itemVariants}
+            type="submit"
+            className="btn-primary"
+            disabled={loading}
+          >
+            {loading ? "Entrando..." : "Entrar"}
+          </motion.button>
+        </form>
+
+        {/* DEMO ACCOUNTS */}
+        <motion.div variants={itemVariants} className="demo-wrapper">
+          <div className="demo-title-wrapper">
+            <span className="demo-divider"></span>
+            <span className="demo-title">Contas de demonstração</span>
+            <span className="demo-divider"></span>
+          </div>
+
+          <div className="demo-grid">
+            {demoAccounts.map((acc, i) => (
+              <button key={i} className="btn-demo" onClick={() => fillDemo(acc)}>
+                {acc.type}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* SWITCH */}
+        <motion.div variants={itemVariants} className="switch-wrapper">
+          <span className="switch-text">Não tem uma conta?</span>
+          <button className="switch-btn" onClick={onSwitchToRegister}>
+            Registre-se
+          </button>
+        </motion.div>
       </motion.div>
     </div>
   );

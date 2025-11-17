@@ -1,6 +1,12 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import logo from "../../assets/logo.svg";
+import { apiService } from "../../services/api";
+
+import { FaRegUser } from "react-icons/fa6";
+import { MdAlternateEmail } from "react-icons/md";
+import { RiLockPasswordLine } from "react-icons/ri";
+import { IoEye, IoEyeOff } from "react-icons/io5";
 
 const Register = ({ onRegister, onSwitchToLogin }) => {
   const [formData, setFormData] = useState({
@@ -8,33 +14,27 @@ const Register = ({ onRegister, onSwitchToLogin }) => {
     email: "",
     password: "",
   });
+
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   const handleSubmit = async (e) => {
-    if (e) e.preventDefault();
+    e.preventDefault();
     setLoading(true);
     setError("");
     setSuccess("");
 
     try {
-      // Simulando apiService.register e apiService.login
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await apiService.register(
+        formData.username,
+        formData.email,
+        formData.password
+      );
 
-      const result = {
-        user: { username: formData.username, email: formData.email },
-      };
-
-      if (result && result.user) {
-        onRegister(result.user);
-        setSuccess("Conta criada e login realizado com sucesso!");
-      } else {
-        setSuccess("Conta criada com sucesso! Faça login para continuar.");
-        setTimeout(() => {
-          onSwitchToLogin();
-        }, 2000);
-      }
+      setSuccess("Conta criada com sucesso! Faça login.");
     } catch (err) {
       setError(err.message || "Erro ao criar conta");
     } finally {
@@ -42,162 +42,132 @@ const Register = ({ onRegister, onSwitchToLogin }) => {
     }
   };
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
+  const handleChange = (e) =>
+    setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      handleSubmit();
-    }
-  };
-
-  // Variantes de animação
   const containerVariants = {
-    hidden: { opacity: 0, y: 50, filter: "blur(10px)" },
+    hidden: { opacity: 0, y: 40, filter: "blur(10px)" },
     visible: {
       opacity: 1,
       y: 0,
       filter: "blur(0px)",
-      transition: {
-        duration: 0.6,
-        ease: "easeOut",
-        staggerChildren: 0.1,
-      },
+      transition: { duration: 0.5, staggerChildren: 0.1 },
     },
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20, filter: "blur(5px)" },
+    hidden: { opacity: 0, y: 15, filter: "blur(6px)" },
     visible: {
       opacity: 1,
       y: 0,
       filter: "blur(0px)",
-      transition: { duration: 0.4 },
+      transition: { duration: 0.35 },
     },
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="page-wrapper">
       <motion.div
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="container-auth card w-full max-w-md"
+        className="auth-card"
       >
-        <motion.div variants={itemVariants} className="card-header text-center">
-          <h2 className="text-2xl flex items-center justify-center gap-2">
-            <img src={logo} alt="logo" className="logo" />
+        <motion.div variants={itemVariants} className="auth-header">
+          <h2 className="title">
+            <img src={logo} className="logo" alt="logo" />
             Registrar
           </h2>
-          <p className="text-muted">Crie sua conta</p>
+          <p className="subtitle">Crie sua conta</p>
         </motion.div>
 
-        <div className="card-body">
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="alert alert-error"
-            >
-              {error}
-            </motion.div>
-          )}
+        {error && (
+          <motion.div variants={itemVariants} className="alert-error">
+            {error}
+          </motion.div>
+        )}
 
-          {success && (
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="alert alert-success"
-            >
-              {success}
-            </motion.div>
-          )}
+        {success && (
+          <motion.div variants={itemVariants} className="alert-success">
+            {success}
+          </motion.div>
+        )}
 
-          <div>
-            <motion.div variants={itemVariants} className="form-group">
-              <label htmlFor="username" className="form-label">
-                Usuário *
-              </label>
-              <motion.input
-                whileFocus={{ scale: 1.01 }}
+        <form onSubmit={handleSubmit}>
+          {/* USERNAME */}
+          <motion.div variants={itemVariants} className="form-group">
+            <label className="form-label">Usuário *</label>
+            <div className="input-icon">
+              <FaRegUser className="left-icon" />
+              <input
                 type="text"
-                id="username"
                 name="username"
+                placeholder="Escolha um nome de usuário"
+                minLength={3}
+                required
                 value={formData.username}
                 onChange={handleChange}
-                onKeyPress={handleKeyPress}
-                className="form-input"
-                required
-                minLength="3"
-                placeholder="Escolha um nome de usuário"
               />
-            </motion.div>
+            </div>
+          </motion.div>
 
-            <motion.div variants={itemVariants} className="form-group">
-              <label htmlFor="email" className="form-label">
-                Email *
-              </label>
-              <motion.input
-                whileFocus={{ scale: 1.01 }}
+          {/* EMAIL */}
+          <motion.div variants={itemVariants} className="form-group">
+            <label className="form-label">Email *</label>
+            <div className="input-icon">
+              <MdAlternateEmail className="left-icon" />
+              <input
                 type="email"
-                id="email"
                 name="email"
+                placeholder="seu@email.com"
+                required
                 value={formData.email}
                 onChange={handleChange}
-                onKeyPress={handleKeyPress}
-                className="form-input"
-                required
-                placeholder="seu@email.com"
               />
-            </motion.div>
+            </div>
+          </motion.div>
 
-            <motion.div variants={itemVariants} className="form-group">
-              <label htmlFor="password" className="form-label">
-                Senha *
-              </label>
-              <motion.input
-                whileFocus={{ scale: 1.01 }}
-                type="password"
-                id="password"
+          {/* PASSWORD */}
+          <motion.div variants={itemVariants} className="form-group">
+            <label className="form-label">Senha *</label>
+            <div className="input-icon">
+              <RiLockPasswordLine className="left-icon" />
+              <input
+                type={showPassword ? "text" : "password"}
                 name="password"
+                placeholder="Mínimo 6 caracteres"
+                minLength={6}
+                required
                 value={formData.password}
                 onChange={handleChange}
-                onKeyPress={handleKeyPress}
-                className="form-input"
-                required
-                minLength="6"
-                placeholder="Mínimo 6 caracteres"
               />
-            </motion.div>
-
-            <motion.button
-              variants={itemVariants}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleSubmit}
-              disabled={loading}
-              className="btn btn-primary w-full"
-            >
-              {loading ? "Criando conta..." : "Criar conta"}
-            </motion.button>
-          </div>
-
-          <motion.div variants={itemVariants} className="text-center mt-4">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              type="button"
-              onClick={onSwitchToLogin}
-              className="btn btn-secondary"
-            >
-              Já tem uma conta? Faça login
-            </motion.button>
+              <button
+                type="button"
+                className="right-icon-btn"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <IoEyeOff /> : <IoEye />}
+              </button>
+            </div>
           </motion.div>
-        </div>
+
+          <motion.button
+            variants={itemVariants}
+            type="submit"
+            className="btn-primary"
+            disabled={loading}
+          >
+            {loading ? "Criando conta..." : "Criar conta"}
+          </motion.button>
+        </form>
+
+        {/* SWITCH */}
+        <motion.div variants={itemVariants} className="switch-wrapper">
+          <span className="switch-text">Já tem uma conta?</span>
+          <button className="switch-btn" onClick={onSwitchToLogin}>
+            Fazer login
+          </button>
+        </motion.div>
       </motion.div>
     </div>
   );

@@ -1,0 +1,378 @@
+CREATE DATABASE IF NOT EXISTS filminis
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+USE filminis;
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- ============================
+-- TABELA USUÁRIO
+-- ============================
+DROP TABLE IF EXISTS usuario;
+CREATE TABLE usuario (
+    id_usuario INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    senha_hash VARCHAR(255) NOT NULL,
+    tipo ENUM('admin','user') DEFAULT 'user',
+    data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- ============================
+-- TABELAS BÁSICAS
+-- ============================
+
+DROP TABLE IF EXISTS genero;
+CREATE TABLE genero (
+    id_genero INT AUTO_INCREMENT PRIMARY KEY,
+    nome_genero VARCHAR(100) UNIQUE NOT NULL
+) ENGINE=InnoDB;
+
+DROP TABLE IF EXISTS pais;
+CREATE TABLE pais (
+    id_pais INT AUTO_INCREMENT PRIMARY KEY,
+    nome_pais VARCHAR(100) UNIQUE NOT NULL
+) ENGINE=InnoDB;
+
+DROP TABLE IF EXISTS produtora;
+CREATE TABLE produtora (
+    id_produtora INT AUTO_INCREMENT PRIMARY KEY,
+    nome_produtora VARCHAR(100) UNIQUE NOT NULL
+) ENGINE=InnoDB;
+
+DROP TABLE IF EXISTS linguagem;
+CREATE TABLE linguagem (
+    id_linguagem INT AUTO_INCREMENT PRIMARY KEY,
+    nome_linguagem VARCHAR(100) UNIQUE NOT NULL
+) ENGINE=InnoDB;
+
+-- ============================
+-- ENTIDADES QUE DEPENDEM DE PAIS
+-- ============================
+
+DROP TABLE IF EXISTS dublador;
+CREATE TABLE dublador (
+    id_dublador INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    sobrenome VARCHAR(100),
+    id_pais INT,
+    FOREIGN KEY (id_pais) REFERENCES pais(id_pais)
+      ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+DROP TABLE IF EXISTS diretor;
+CREATE TABLE diretor (
+    id_diretor INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    sobrenome VARCHAR(100),
+    id_pais INT,
+    FOREIGN KEY (id_pais) REFERENCES pais(id_pais)
+      ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+-- ============================
+-- FILME
+-- ============================
+
+DROP TABLE IF EXISTS filme;
+CREATE TABLE filme (
+    id_filme INT AUTO_INCREMENT PRIMARY KEY,
+    titulo VARCHAR(255) NOT NULL,
+    orcamento DECIMAL(15,2),
+    tempo_duracao TIME,
+    ano INT,
+    poster_url VARCHAR(500)
+) ENGINE=InnoDB;
+
+-- ============================
+-- TABELAS DE RELAÇÃO
+-- ============================
+
+DROP TABLE IF EXISTS filme_genero;
+CREATE TABLE filme_genero (
+    id_filme INT NOT NULL,
+    id_genero INT NOT NULL,
+    PRIMARY KEY (id_filme, id_genero),
+    FOREIGN KEY (id_filme) REFERENCES filme(id_filme)
+      ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (id_genero) REFERENCES genero(id_genero)
+      ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+DROP TABLE IF EXISTS filme_dublador;
+CREATE TABLE filme_dublador (
+    id_filme INT NOT NULL,
+    id_dublador INT NOT NULL,
+    PRIMARY KEY (id_filme, id_dublador),
+    FOREIGN KEY (id_filme) REFERENCES filme(id_filme)
+      ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (id_dublador) REFERENCES dublador(id_dublador)
+      ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+DROP TABLE IF EXISTS filme_diretor;
+CREATE TABLE filme_diretor (
+    id_filme INT NOT NULL,
+    id_diretor INT NOT NULL,
+    PRIMARY KEY (id_filme, id_diretor),
+    FOREIGN KEY (id_filme) REFERENCES filme(id_filme)
+      ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (id_diretor) REFERENCES diretor(id_diretor)
+      ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+DROP TABLE IF EXISTS filme_produtora;
+CREATE TABLE filme_produtora (
+    id_filme INT NOT NULL,
+    id_produtora INT NOT NULL,
+    PRIMARY KEY (id_filme, id_produtora),
+    FOREIGN KEY (id_filme) REFERENCES filme(id_filme)
+      ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (id_produtora) REFERENCES produtora(id_produtora)
+      ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+DROP TABLE IF EXISTS filme_linguagem;
+CREATE TABLE filme_linguagem (
+    id_filme INT NOT NULL,
+    id_linguagem INT NOT NULL,
+    PRIMARY KEY (id_filme, id_linguagem),
+    FOREIGN KEY (id_filme) REFERENCES filme(id_filme)
+      ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (id_linguagem) REFERENCES linguagem(id_linguagem)
+      ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+DROP TABLE IF EXISTS filme_pais;
+CREATE TABLE filme_pais (
+    id_filme INT NOT NULL,
+    id_pais INT NOT NULL,
+    PRIMARY KEY (id_filme, id_pais),
+    FOREIGN KEY (id_filme) REFERENCES filme(id_filme)
+      ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (id_pais) REFERENCES pais(id_pais)
+      ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+USE filminis;
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- ============================
+-- USUÁRIOS
+-- ============================
+INSERT INTO usuario (username,email,senha_hash,tipo) VALUES
+('admin','admin@email.com', SHA2('admin123',256), 'admin'),
+('usuario1','usuario1@email.com', SHA2('user123',256), 'user'),
+('maria','maria@email.com', SHA2('maria123',256), 'user'),
+('joao','joao@email.com', SHA2('joao123',256), 'user');
+
+-- ============================
+-- GÊNEROS
+-- ============================
+INSERT INTO genero (nome_genero) VALUES
+('Ação'),
+('Comédia'),
+('Drama'),
+('Ficção Científica'),
+('Terror'),
+('Romance'),
+('Animação'),
+('Aventura'),
+('Fantasia'),
+('Suspense');
+
+-- ============================
+-- PAÍSES
+-- ============================
+INSERT INTO pais (nome_pais) VALUES
+('Brasil'),
+('Estados Unidos'),
+('França'),
+('Japão'),
+('Reino Unido'),
+('Alemanha'),
+('Itália'),
+('Canadá'),
+('Austrália'),
+('Coreia do Sul');
+
+-- ============================
+-- PRODUTORAS
+-- ============================
+INSERT INTO produtora (nome_produtora) VALUES
+('Warner Bros'),
+('Disney'),
+('Universal'),
+('Paramount'),
+('Sony Pictures'),
+('20th Century Studios'),
+('Metro-Goldwyn-Mayer'),
+('Lionsgate'),
+('DreamWorks'),
+('Netflix');
+
+-- ============================
+-- LINGUAGENS
+-- ============================
+INSERT INTO linguagem (nome_linguagem) VALUES
+('Português'),
+('Inglês'),
+('Espanhol'),
+('Francês'),
+('Japonês'),
+('Alemão'),
+('Italiano'),
+('Coreano'),
+('Mandarim'),
+('Russo');
+
+-- ============================
+-- DUBLADORES
+-- ============================
+INSERT INTO dublador (nome,sobrenome,id_pais) VALUES
+('João', 'Silva', 1),
+('Maria', 'Santos', 1),
+('Carlos', 'Oliveira', 1),
+('Pedro', 'Costa', 1),
+('Ana', 'Ferreira', 1),
+('John', 'Smith', 2),
+('Emma', 'Johnson', 2),
+('Michael', 'Brown', 2),
+('Sarah', 'Davis', 2),
+('Robert', 'Wilson', 2),
+('Pierre', 'Dubois', 3),
+('Marie', 'Laurent', 3),
+('Kenji', 'Tanaka', 4),
+('Yuki', 'Sato', 4),
+('Hans', 'Müller', 6),
+('Klaus', 'Schmidt', 6),
+('Giovanni', 'Rossi', 7),
+('Maria', 'Bianchi', 7),
+('Park', 'Ji-hoon', 10),
+('Kim', 'Min-seo', 10);
+
+-- ============================
+-- DIRETORES
+-- ============================
+INSERT INTO diretor (nome,sobrenome,id_pais) VALUES
+('Pedro','Almeida',1),
+('Ana','Costa',1),
+('Carlos','Mendes',1),
+('Steven','Spielberg',2),
+('Christopher','Nolan',5),
+('James','Cameron',2),
+('Quentin','Tarantino',2),
+('Martin','Scorsese',2),
+('Hayao','Miyazaki',4),
+('Alfred','Hitchcock',5),
+('Tim','Burton',2),
+('Ridley','Scott',5),
+('Claude','Chabrol',3),
+('Luc','Besson',3),
+('Wong','Kar-wai',9),
+('Park','Chan-wook',10),
+('Federico','Fellini',7),
+('Roberto','Benigni',7);
+
+-- ============================
+-- FILMES
+-- ============================
+INSERT INTO filme (titulo,orcamento,tempo_duracao,ano,poster_url) VALUES
+('O Aventureiro', 50000000, '02:15:00', 2020, 'https://br.web.img3.acsta.net/pictures/14/10/06/18/23/355297.jpg'),
+('Um Amor em Paris', 30000000, '01:45:00', 2019, 'https://br.web.img3.acsta.net/pictures/14/07/22/12/22/409138.jpg'),
+('Guerra nas Estrelas', 200000000, '02:30:00', 2021, 'https://cdn.cineart.com.br/vibezz_993051148.jpg'),
+('O Segredo', 25000000, '01:55:00', 2018, 'https://br.web.img3.acsta.net/pictures/20/03/12/16/31/4145074.jpg'),
+('Noite de Terror', 15000000, '01:40:00', 2022, 'https://br.web.img3.acsta.net/img/ef/d3/efd3cc219ec876e4599b8975908e5ee4.jpg'),
+('Riso Contagiante', 35000000, '01:50:00', 2020, 'https://coolturalblog.wordpress.com/wp-content/uploads/2013/07/patch-adams-dvd-inlay1.jpg?w=640'),
+('Viagem Fantástica', 80000000, '02:05:00', 2021, 'https://br.web.img3.acsta.net/c_310_420/pictures/16/01/08/18/44/096148.jpg'),
+('Coração de Herói', 60000000, '02:20:00', 2019, 'https://i.redd.it/yktee1raqq9f1.jpeg'),
+('Mistério Final', 28000000, '01:48:00', 2023, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTpFfNhiN2MHmB_N6r0LKxhEDg7tX_86yHZzw&s'),
+('Amizade Eterna', 22000000, '01:42:00', 2020, 'https://m.media-amazon.com/images/S/pv-target-images/7df79814385acf9542d7621fc0b86a1fd89cc91c5c41b04ae4ef33051f54ef3a.jpg');
+
+-- ============================
+-- RELAÇÃO: FILME → GÊNERO
+-- ============================
+INSERT INTO filme_genero VALUES
+(1,1),(1,8),
+(2,3),(2,6),
+(3,4),(3,1),(3,8),
+(4,3),(4,10),
+(5,5),(5,10),
+(6,2),(6,8),
+(7,4),(7,9),(7,8),
+(8,1),(8,3),(8,8),
+(9,10),(9,3),
+(10,3),(10,6);
+
+-- ============================
+-- RELAÇÃO: FILME → DIRETOR
+-- ============================
+INSERT INTO filme_diretor VALUES
+(1,1),(2,2),(3,4),(4,3),(5,10),
+(6,11),(7,6),(8,5),(9,16),(10,17);
+
+-- ============================
+-- RELAÇÃO: FILME → DUBLADOR
+-- ============================
+INSERT INTO filme_dublador VALUES
+(1,1),(1,2),(1,6),
+(2,3),(2,4),(2,12),
+(3,6),(3,7),(3,8),(3,13),
+(4,5),(4,9),
+(5,10),(5,11),(5,14),
+(6,1),(6,3),(6,15),
+(7,7),(7,8),(7,16),
+(8,2),(8,6),(8,17),
+(9,10),(9,19),
+(10,4),(10,5);
+
+-- ============================
+-- RELAÇÃO: FILME → PRODUTORA
+-- ============================
+INSERT INTO filme_produtora VALUES
+(1,1),(1,3),
+(2,4),
+(3,2),(3,5),
+(4,7),
+(5,8),
+(6,9),
+(7,3),(7,6),
+(8,1),(8,4),
+(9,10),
+(10,5);
+
+-- ============================
+-- RELAÇÃO: FILME → LINGUAGEM
+-- ============================
+INSERT INTO filme_linguagem VALUES
+(1,1),(1,2),
+(2,1),(2,2),(2,4),
+(3,2),(3,5),
+(4,1),(4,2),
+(5,2),(5,6),
+(6,1),(6,2),(6,3),
+(7,2),(7,8),
+(8,2),(8,7),
+(9,2),(9,8),(9,9),
+(10,1),(10,2),(10,7);
+
+-- ============================
+-- RELAÇÃO: FILME → PAÍS
+-- ============================
+INSERT INTO filme_pais VALUES
+(1,1),(1,2),
+(2,1),(2,3),
+(3,2),(3,4),(3,5),
+(4,1),(4,2),
+(5,2),(5,6),
+(6,1),(6,2),(6,3),
+(7,2),(7,8),(7,10),
+(8,2),(8,5),(8,7),
+(9,10),(9,9),
+(10,1),(10,7);
+
+SET FOREIGN_KEY_CHECKS = 1;

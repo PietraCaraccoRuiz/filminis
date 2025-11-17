@@ -1,190 +1,199 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { apiService } from './services/api';
-import Navigation from './components/Common/Navigation';
-import Login from './components/Auth/Login';
-import Register from './components/Auth/Register';
-import MovieList from './components/Movies/MovieList';
-import MovieDetail from './components/Movies/MovieDetail';
-import MovieEdit from './components/Movies/MovieEdit';
-import GenreList from './components/Genres/GenreList';
-import CountryList from './components/Countries/CountryList';
-import StudioList from './components/Studios/StudioList';
-import LanguageList from './components/Languages/LanguageList';
-import DirectorList from './components/Directors/DirectorList';
-import ActorList from './components/Actors/ActorList';
-import './styles/global.css';
+import React, { useState, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { apiService } from "./services/api";
+
+import Navigation from "./components/Common/Navigation";
+
+import Login from "./components/Auth/Login";
+import Register from "./components/Auth/Register";
+
+import MovieList from "./components/Movies/MovieList";
+import MovieDetail from "./components/Movies/MovieDetail";
+import MovieEdit from "./components/Movies/MovieEdit";
+
+import GenreList from "./components/Genres/GenreList";
+import CountryList from "./components/Countries/CountryList";
+import StudioList from "./components/Studios/StudioList";
+import LanguageList from "./components/Languages/LanguageList";
+import DirectorList from "./components/Directors/DirectorList";
+import ActorList from "./components/Actors/ActorList";
+
+import "./styles/global.css";
 
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Carrega token ao abrir app
   useEffect(() => {
-    // Verificar se há um token válido no localStorage
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      // Tentar validar o token com o servidor
-      const validateToken = async () => {
-        try {
-          // Aqui você poderia adicionar uma verificação no servidor
-          // Por enquanto, assumimos que o token é válido
-          setLoading(false);
-        } catch (error) {
-          // Token inválido, limpar localStorage
-          localStorage.removeItem('authToken');
-          setLoading(false);
-        }
-      };
-      validateToken();
-    } else {
+    const token = localStorage.getItem("authToken");
+
+    if (!token) {
       setLoading(false);
+      return;
     }
+
+    (async () => {
+      try {
+        const data = await apiService.request("/me");
+        setUser(data.user);
+      } catch (err) {
+        apiService.logout();
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
-  const handleLogin = (userData) => {
-    setUser(userData);
-  };
-
-  const handleRegister = (userData) => {
-    setUser(userData);
-  };
-
+  const handleLogin = (userData) => setUser(userData);
+  const handleRegister = () => {}; // opcional, registro só avisa sucesso
   const handleLogout = () => {
     apiService.logout();
     setUser(null);
   };
 
-  const ProtectedRoute = ({ children }) => {
-    return user ? children : <Navigate to="/login" />;
-  };
+  const ProtectedRoute = ({ children }) =>
+    user ? children : <Navigate to="/login" replace />;
 
-  const AdminRoute = ({ children }) => {
-    return user && user.tipo === 'admin' ? children : <Navigate to="/" />;
-  };
+  const AdminRoute = ({ children }) =>
+    user && user.tipo === "admin" ? (
+      children
+    ) : (
+      <Navigate to="/" replace />
+    );
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-bg-secondary">
-        <div className="text-lg">Carregando...</div>
+      <div className="page-wrapper">
+        <div className="auth-card" style={{ textAlign: "center" }}>
+          <p className="subtitle">Carregando...</p>
+        </div>
       </div>
     );
   }
 
   return (
     <Router>
-      <div className="min-h-screen bg-bg-secondary">
+      <div className="app-wrapper">
         {user && <Navigation user={user} onLogout={handleLogout} />}
-        
-        <main>
+
+        <main className="main-content">
           <Routes>
-            {/* Rotas públicas */}
-            <Route 
-              path="/login" 
+            {/* LOGIN */}
+            <Route
+              path="/login"
               element={
                 !user ? (
-                  <Login onLogin={handleLogin} onSwitchToRegister={() => window.location.href = '/register'} />
+                  <Login
+                    onLogin={handleLogin}
+                    onSwitchToRegister={() => <Navigate to="/register" replace />}
+                  />
                 ) : (
-                  <Navigate to="/" />
+                  <Navigate to="/" replace />
                 )
-              } 
-            />
-            
-            <Route 
-              path="/register" 
-              element={
-                !user ? (
-                  <Register onRegister={handleRegister} onSwitchToLogin={() => window.location.href = '/login'} />
-                ) : (
-                  <Navigate to="/" />
-                )
-              } 
+              }
             />
 
-            {/* Rotas protegidas - CRUD Principal */}
-            <Route 
-              path="/" 
+            {/* REGISTER */}
+            <Route
+              path="/register"
+              element={
+                !user ? (
+                  <Register
+                    onRegister={handleRegister}
+                    onSwitchToLogin={() => <Navigate to="/login" replace />}
+                  />
+                ) : (
+                  <Navigate to="/" replace />
+                )
+              }
+            />
+
+            {/* ROTAS PROTEGIDAS */}
+            <Route
+              path="/"
               element={
                 <ProtectedRoute>
                   <MovieList user={user} />
                 </ProtectedRoute>
-              } 
+              }
             />
-            
-            <Route 
-              path="/filme/:id" 
+
+            <Route
+              path="/filme/:id"
               element={
                 <ProtectedRoute>
                   <MovieDetail user={user} />
                 </ProtectedRoute>
-              } 
+              }
             />
-            
-            <Route 
-              path="/filme/editar/:id" 
+
+            <Route
+              path="/filme/editar/:id"
               element={
                 <AdminRoute>
                   <MovieEdit user={user} />
                 </AdminRoute>
-              } 
+              }
             />
 
-            {/* Rotas para entidades relacionadas */}
-            <Route 
-              path="/generos" 
+            <Route
+              path="/generos"
               element={
                 <ProtectedRoute>
                   <GenreList user={user} />
                 </ProtectedRoute>
-              } 
+              }
             />
 
-            <Route 
-              path="/paises" 
+            <Route
+              path="/paises"
               element={
                 <ProtectedRoute>
                   <CountryList user={user} />
                 </ProtectedRoute>
-              } 
+              }
             />
 
-            <Route 
-              path="/produtoras" 
+            <Route
+              path="/produtoras"
               element={
                 <ProtectedRoute>
                   <StudioList user={user} />
                 </ProtectedRoute>
-              } 
+              }
             />
 
-            <Route 
-              path="/idiomas" 
+            <Route
+              path="/idiomas"
               element={
                 <ProtectedRoute>
                   <LanguageList user={user} />
                 </ProtectedRoute>
-              } 
+              }
             />
 
-            <Route 
-              path="/diretores" 
+            <Route
+              path="/diretores"
               element={
                 <ProtectedRoute>
                   <DirectorList user={user} />
                 </ProtectedRoute>
-              } 
+              }
             />
 
-            <Route 
-              path="/dubladores" 
+            <Route
+              path="/dubladores"
               element={
                 <ProtectedRoute>
                   <ActorList user={user} />
                 </ProtectedRoute>
-              } 
+              }
             />
 
-            {/* Rota padrão */}
-            <Route path="*" element={<Navigate to="/" />} />
+            {/* FALLBACK */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
       </div>
