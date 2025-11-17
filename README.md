@@ -20,3 +20,7 @@ cd frontend      # para navegar a pasta correta
 npm install     # para instalar os pacotes
 npm run dev     # para iniciar o frontend
 ```
+
+### Link para o Figma
+
+[Protótipo no Figma](https://www.figma.com/design/2LPfJA1xj0IwuFFQukgbd9/Filminis?node-id=9-1459&t=BcopOdtNAedsfqNN-1)
