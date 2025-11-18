@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
+import { apiService } from "../../services/api";
 import logo from "../../assets/logo.svg";
 
 const Register = ({ onRegister, onSwitchToLogin }) => {
@@ -8,76 +9,68 @@ const Register = ({ onRegister, onSwitchToLogin }) => {
     email: "",
     password: "",
   });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
   const handleSubmit = async (e) => {
-    if (e) e.preventDefault();
+    e.preventDefault();
+
     setLoading(true);
     setError("");
     setSuccess("");
 
     try {
-      // Simulando apiService.register e apiService.login
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const reg = await apiService.register(
+        formData.username,
+        formData.email,
+        formData.password
+      );
 
-      const result = {
-        user: { username: formData.username, email: formData.email },
-      };
-
-      if (result && result.user) {
-        onRegister(result.user);
-        setSuccess("Conta criada e login realizado com sucesso!");
-      } else {
-        setSuccess("Conta criada com sucesso! Faça login para continuar.");
-        setTimeout(() => {
-          onSwitchToLogin();
-        }, 2000);
+      if (!reg?.id) {
+        throw new Error("Falha no registro");
       }
+
+      const login = await apiService.login(
+        formData.username,
+        formData.password
+      );
+
+      if (!login?.user) {
+        throw new Error("Conta criada, mas erro ao fazer login automático.");
+      }
+
+      setSuccess("Conta criada com sucesso!");
+      onRegister(login.user);
+
     } catch (err) {
-      setError(err.message || "Erro ao criar conta");
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
+  const handleChange = (e) =>
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
   const handleKeyPress = (e) => {
-    if (e.key === "Enter") {
-      handleSubmit();
-    }
+    if (e.key === "Enter") handleSubmit(e);
   };
 
-  // Variantes de animação
   const containerVariants = {
     hidden: { opacity: 0, y: 50, filter: "blur(10px)" },
     visible: {
       opacity: 1,
       y: 0,
       filter: "blur(0px)",
-      transition: {
-        duration: 0.6,
-        ease: "easeOut",
-        staggerChildren: 0.1,
-      },
-    },
+      transition: { duration: 0.6, staggerChildren: 0.1 }
+    }
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20, filter: "blur(5px)" },
-    visible: {
-      opacity: 1,
-      y: 0,
-      filter: "blur(0px)",
-      transition: { duration: 0.4 },
-    },
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
   };
 
   return (
@@ -97,10 +90,11 @@ const Register = ({ onRegister, onSwitchToLogin }) => {
         </motion.div>
 
         <div className="card-body">
+
           {error && (
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               className="alert alert-error"
             >
               {error}
@@ -109,68 +103,56 @@ const Register = ({ onRegister, onSwitchToLogin }) => {
 
           {success && (
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               className="alert alert-success"
             >
               {success}
             </motion.div>
           )}
 
-          <div>
+          <form onSubmit={handleSubmit}>
             <motion.div variants={itemVariants} className="form-group">
-              <label htmlFor="username" className="form-label">
-                Usuário *
-              </label>
+              <label className="form-label">Usuário *</label>
               <motion.input
                 whileFocus={{ scale: 1.01 }}
                 type="text"
-                id="username"
                 name="username"
                 value={formData.username}
                 onChange={handleChange}
                 onKeyPress={handleKeyPress}
                 className="form-input"
-                required
                 minLength="3"
-                placeholder="Escolha um nome de usuário"
+                required
               />
             </motion.div>
 
             <motion.div variants={itemVariants} className="form-group">
-              <label htmlFor="email" className="form-label">
-                Email *
-              </label>
+              <label className="form-label">Email *</label>
               <motion.input
                 whileFocus={{ scale: 1.01 }}
                 type="email"
-                id="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
                 onKeyPress={handleKeyPress}
                 className="form-input"
                 required
-                placeholder="seu@email.com"
               />
             </motion.div>
 
             <motion.div variants={itemVariants} className="form-group">
-              <label htmlFor="password" className="form-label">
-                Senha *
-              </label>
+              <label className="form-label">Senha *</label>
               <motion.input
                 whileFocus={{ scale: 1.01 }}
                 type="password"
-                id="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
                 onKeyPress={handleKeyPress}
                 className="form-input"
-                required
                 minLength="6"
-                placeholder="Mínimo 6 caracteres"
+                required
               />
             </motion.div>
 
@@ -178,25 +160,24 @@ const Register = ({ onRegister, onSwitchToLogin }) => {
               variants={itemVariants}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              onClick={handleSubmit}
               disabled={loading}
               className="btn btn-primary w-full"
             >
-              {loading ? "Criando conta..." : "Criar conta"}
+              {loading ? "Criando..." : "Criar conta"}
             </motion.button>
-          </div>
+          </form>
 
           <motion.div variants={itemVariants} className="text-center mt-4">
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              type="button"
               onClick={onSwitchToLogin}
               className="btn btn-secondary"
             >
-              Já tem uma conta? Faça login
+              Já tem uma conta? Fazer login
             </motion.button>
           </motion.div>
+
         </div>
       </motion.div>
     </div>

@@ -8,6 +8,7 @@ const Login = ({ onLogin, onSwitchToRegister }) => {
     username: '',
     password: ''
   });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -18,45 +19,43 @@ const Login = ({ onLogin, onSwitchToRegister }) => {
 
     try {
       const result = await apiService.login(formData.username, formData.password);
-      onLogin(result.user);
+
+      if (!result?.user || !result?.token) {
+        throw new Error("Falha inesperada no handshake com o backend.");
+      }
+
+      onLogin(result);
+
     } catch (err) {
-      setError(err.message || 'Erro ao fazer login');
+      setError(err.message || 'Credenciais inválidas.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
+  const handleChange = (e) =>
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
   const demoAccounts = [
     { username: 'admin', password: 'admin123', type: 'Admin' },
     { username: 'usuario1', password: 'user123', type: 'User' }
   ];
 
-  const fillDemo = (account) => {
+  const fillDemo = (acc) => {
     setFormData({
-      username: account.username,
-      password: account.password
+      username: acc.username,
+      password: acc.password
     });
   };
 
-  // Variantes de animação
+  // Animações padrão do design system
   const containerVariants = {
     hidden: { opacity: 0, y: 50, filter: "blur(10px)" },
     visible: {
       opacity: 1,
       y: 0,
       filter: "blur(0px)",
-      transition: {
-        duration: 0.6,
-        ease: "easeOut",
-        staggerChildren: 0.1
-      }
+      transition: { duration: 0.6, ease: "easeOut", staggerChildren: 0.1 }
     }
   };
 
@@ -80,12 +79,14 @@ const Login = ({ onLogin, onSwitchToRegister }) => {
       >
         <motion.div variants={itemVariants} className="card-header text-center">
           <h2 className="text-2xl flex items-center justify-center gap-2">
-            <img src={logo} alt="logo" className='logo' />
-            Login</h2>
-          <p className="text-muted">Entre na sua conta</p>
+            <img src={logo} alt="logo" className="logo" />
+            Login
+          </h2>
+          <p className="text-muted">Acessa aí e vamos pra entrega 🚀</p>
         </motion.div>
-        
+
         <div className="card-body">
+
           {error && (
             <motion.div
               initial={{ opacity: 0, x: -20 }}
@@ -98,13 +99,10 @@ const Login = ({ onLogin, onSwitchToRegister }) => {
 
           <form onSubmit={handleSubmit}>
             <motion.div variants={itemVariants} className="form-group">
-              <label htmlFor="username" className="form-label">
-                Usuário
-              </label>
+              <label className="form-label">Usuário</label>
               <motion.input
                 whileFocus={{ scale: 1.01 }}
                 type="text"
-                id="username"
                 name="username"
                 value={formData.username}
                 onChange={handleChange}
@@ -114,13 +112,10 @@ const Login = ({ onLogin, onSwitchToRegister }) => {
             </motion.div>
 
             <motion.div variants={itemVariants} className="form-group">
-              <label htmlFor="password" className="form-label">
-                Senha
-              </label>
+              <label className="form-label">Senha</label>
               <motion.input
                 whileFocus={{ scale: 1.01 }}
                 type="password"
-                id="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
@@ -137,23 +132,22 @@ const Login = ({ onLogin, onSwitchToRegister }) => {
               disabled={loading}
               className="btn btn-primary w-full"
             >
-              {loading ? 'Entrando...' : 'Entrar'}
+              {loading ? "Processando..." : "Entrar"}
             </motion.button>
           </form>
 
           <motion.div variants={itemVariants} className="mt-4">
-            <h4 className="text-sm text-muted mb-2">Contas de Demonstração:</h4>
+            <h4 className="text-sm text-muted mb-2">Contas Demo:</h4>
             <div className="grid grid-cols-2 gap-2">
-              {demoAccounts.map((account, index) => (
+              {demoAccounts.map((acc, i) => (
                 <motion.button
-                  key={index}
+                  key={i}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  type="button"
-                  onClick={() => fillDemo(account)}
+                  onClick={() => fillDemo(acc)}
                   className="btn btn-outline btn-sm"
                 >
-                  {account.type}
+                  {acc.type}
                 </motion.button>
               ))}
             </div>
@@ -163,13 +157,13 @@ const Login = ({ onLogin, onSwitchToRegister }) => {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              type="button"
               onClick={onSwitchToRegister}
               className="btn btn-secondary"
             >
-              Não tem uma conta? Registre-se
+              Criar conta
             </motion.button>
           </motion.div>
+
         </div>
       </motion.div>
     </div>

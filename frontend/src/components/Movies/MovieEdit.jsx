@@ -7,42 +7,39 @@ const MovieEdit = ({ user }) => {
   const { id } = useParams();
   const navigate = useNavigate();
 
+  const goBack = () => navigate(`/filme/${id}`);
+
   const handleUpdate = async (movieData, relations) => {
     try {
-      // Atualizar dados do filme
+      // Update core entity
       await apiService.updateEntity('filme', id, movieData);
-      
-      // Atualizar relacionamentos
+
+      // Update relations if provided
       if (relations) {
         await apiService.updateMovieRelations(id, relations);
       }
-      
-      navigate(`/filme/${id}`);
-    } catch (err) {
-      throw new Error('Erro ao atualizar filme: ' + err.message);
-    }
-  };
 
-  const handleCancel = () => {
-    navigate(`/filme/${id}`);
+      goBack();
+    } catch (err) {
+      throw new Error(`Erro ao atualizar filme: ${err.message}`);
+    }
   };
 
   return (
     <div className="container p-4 flex flex-col gap-4">
-      <div className="mb-6">
-        <button
-          onClick={handleCancel}
-          className="btn btn-outline mb-4"
-        >
+
+      <div className="mb-6 flex flex-col gap-3">
+        <button onClick={goBack} className="btn btn-outline w-fit">
           ← Voltar
         </button>
+
         <h1 className="text-2xl font-bold">Editar Filme</h1>
       </div>
 
       <MovieForm
         movieId={id}
         onSubmit={handleUpdate}
-        onClose={handleCancel}
+        onClose={goBack}
       />
     </div>
   );

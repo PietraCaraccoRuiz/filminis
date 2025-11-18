@@ -11,8 +11,8 @@ const fadeCard = {
     opacity: 1,
     filter: "blur(0px)",
     scale: 1,
-    transition: { duration: 0.45, ease: "easeOut" }
-  }
+    transition: { duration: 0.45, ease: "easeOut" },
+  },
 };
 
 const MovieList = ({ user }) => {
@@ -116,14 +116,11 @@ const MovieList = ({ user }) => {
       {showForm && (
         <MovieForm
           movie={editingMovie}
-          onSubmit={
-            editingMovie
-              ? (data) => handleUpdate(editingMovie.id_filme, data)
-              : handleCreate
-          }
+          movieId={editingMovie?.id_filme}
           onClose={() => {
             setShowForm(false);
             setEditingMovie(null);
+            loadMovies(); // recarrega depois que o MovieForm salvar
           }}
         />
       )}
@@ -138,7 +135,10 @@ const MovieList = ({ user }) => {
           <h3 className="text-lg mb-2">Nenhum filme encontrado</h3>
 
           {user.tipo === "admin" && (
-            <button className="btn btn-primary" onClick={() => setShowForm(true)}>
+            <button
+              className="btn btn-primary"
+              onClick={() => setShowForm(true)}
+            >
               Adicionar Primeiro Filme
             </button>
           )}
@@ -148,7 +148,10 @@ const MovieList = ({ user }) => {
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           initial="hidden"
           animate="show"
-          variants={{ hidden: {}, show: { transition: { staggerChildren: 0.09 } } }}
+          variants={{
+            hidden: {},
+            show: { transition: { staggerChildren: 0.09 } },
+          }}
         >
           {movies.map((movie) => (
             <motion.div key={movie.id_filme} variants={fadeCard}>

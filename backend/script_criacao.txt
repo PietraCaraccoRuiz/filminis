@@ -1,0 +1,143 @@
+DROP DATABASE IF EXISTS filminis;
+CREATE DATABASE filminis CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE filminis;
+
+-- ===========================
+-- TABELA usuario
+-- ===========================
+CREATE TABLE usuario (
+    id_usuario INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    senha_hash VARCHAR(255) NOT NULL,
+    tipo ENUM('admin','user') DEFAULT 'user',
+    data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ===========================
+-- TABELA sessoes
+-- ===========================
+CREATE TABLE sessoes (
+    token VARCHAR(32) PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
+);
+
+-- ===========================
+-- TABELA genero
+-- ===========================
+CREATE TABLE genero (
+    id_genero INT AUTO_INCREMENT PRIMARY KEY,
+    nome_genero VARCHAR(100) UNIQUE NOT NULL
+);
+
+-- ===========================
+-- TABELA pais
+-- ===========================
+CREATE TABLE pais (
+    id_pais INT AUTO_INCREMENT PRIMARY KEY,
+    nome_pais VARCHAR(100) UNIQUE NOT NULL
+);
+
+-- ===========================
+-- TABELA produtora
+-- ===========================
+CREATE TABLE produtora (
+    id_produtora INT AUTO_INCREMENT PRIMARY KEY,
+    nome_produtora VARCHAR(100) UNIQUE NOT NULL
+);
+
+-- ===========================
+-- TABELA linguagem
+-- ===========================
+CREATE TABLE linguagem (
+    id_linguagem INT AUTO_INCREMENT PRIMARY KEY,
+    nome_linguagem VARCHAR(100) UNIQUE NOT NULL
+);
+
+-- ===========================
+-- TABELA dublador
+-- ===========================
+CREATE TABLE dublador (
+    id_dublador INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    sobrenome VARCHAR(100),
+    id_pais INT,
+    FOREIGN KEY (id_pais) REFERENCES pais(id_pais)
+);
+
+-- ===========================
+-- TABELA diretor
+-- ===========================
+CREATE TABLE diretor (
+    id_diretor INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    sobrenome VARCHAR(100),
+    id_pais INT,
+    FOREIGN KEY (id_pais) REFERENCES pais(id_pais)
+);
+
+-- ===========================
+-- TABELA filme
+-- ===========================
+CREATE TABLE filme (
+    id_filme INT AUTO_INCREMENT PRIMARY KEY,
+    titulo VARCHAR(255) NOT NULL,
+    orcamento DECIMAL(15,2),
+    tempo_duracao TIME,
+    ano INT,
+    poster_url VARCHAR(500)
+);
+
+-- ===========================
+-- RELACIONAMENTOS
+-- ===========================
+
+CREATE TABLE filme_genero (
+    id_filme INT NOT NULL,
+    id_genero INT NOT NULL,
+    PRIMARY KEY (id_filme, id_genero),
+    FOREIGN KEY (id_filme) REFERENCES filme(id_filme) ON DELETE CASCADE,
+    FOREIGN KEY (id_genero) REFERENCES genero(id_genero)
+);
+
+CREATE TABLE filme_dublador (
+    id_filme INT NOT NULL,
+    id_dublador INT NOT NULL,
+    PRIMARY KEY (id_filme, id_dublador),
+    FOREIGN KEY (id_filme) REFERENCES filme(id_filme) ON DELETE CASCADE,
+    FOREIGN KEY (id_dublador) REFERENCES dublador(id_dublador)
+);
+
+CREATE TABLE filme_diretor (
+    id_filme INT NOT NULL,
+    id_diretor INT NOT NULL,
+    PRIMARY KEY (id_filme, id_diretor),
+    FOREIGN KEY (id_filme) REFERENCES filme(id_filme) ON DELETE CASCADE,
+    FOREIGN KEY (id_diretor) REFERENCES diretor(id_diretor)
+);
+
+CREATE TABLE filme_produtora (
+    id_filme INT NOT NULL,
+    id_produtora INT NOT NULL,
+    PRIMARY KEY (id_filme, id_produtora),
+    FOREIGN KEY (id_filme) REFERENCES filme(id_filme) ON DELETE CASCADE,
+    FOREIGN KEY (id_produtora) REFERENCES produtora(id_produtora)
+);
+
+CREATE TABLE filme_linguagem (
+    id_filme INT NOT NULL,
+    id_linguagem INT NOT NULL,
+    PRIMARY KEY (id_filme, id_linguagem),
+    FOREIGN KEY (id_filme) REFERENCES filme(id_filme) ON DELETE CASCADE,
+    FOREIGN KEY (id_linguagem) REFERENCES linguagem(id_linguagem)
+);
+
+CREATE TABLE filme_pais (
+    id_filme INT NOT NULL,
+    id_pais INT NOT NULL,
+    PRIMARY KEY (id_filme, id_pais),
+    FOREIGN KEY (id_filme) REFERENCES filme(id_filme) ON DELETE CASCADE,
+    FOREIGN KEY (id_pais) REFERENCES pais(id_pais)
+);

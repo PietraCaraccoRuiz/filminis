@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 import { FiFilm, FiUser, FiGlobe, FiMic, FiBriefcase } from "react-icons/fi";
 import { MdCategory } from "react-icons/md";
 
-// 💠 Fade suave + Blur + Scale — padrão do projeto
 const fadeCard = {
   hidden: { opacity: 0, filter: "blur(6px)", scale: 0.97 },
   show: {
@@ -30,6 +29,7 @@ const fadeItem = {
 const MovieDetail = ({ user }) => {
   const { id } = useParams();
   const navigate = useNavigate();
+
   const [movie, setMovie] = useState(null);
   const [relations, setRelations] = useState({});
   const [loading, setLoading] = useState(true);
@@ -43,10 +43,12 @@ const MovieDetail = ({ user }) => {
   const loadMovie = async () => {
     try {
       setLoading(true);
+
       const [movieData, relationsData] = await Promise.all([
         apiService.getEntity('filme', id),
         apiService.getMovieRelations(id)
       ]);
+
       setMovie(movieData);
       setRelations(relationsData);
     } catch (err) {
@@ -72,8 +74,8 @@ const MovieDetail = ({ user }) => {
 
   const formatDuration = (duration) => {
     if (!duration) return 'N/A';
-    const [hours, minutes, seconds] = duration.split(':');
-    return `${hours}h ${minutes}m${seconds !== '00' ? ` ${seconds}s` : ''}`;
+    const [h, m, s] = duration.split(':');
+    return `${h}h ${m}m${s !== '00' ? ` ${s}s` : ''}`;
   };
 
   const handleRelationsUpdate = () => loadMovie();
@@ -103,14 +105,13 @@ const MovieDetail = ({ user }) => {
     );
   }
 
-  // Configuração de ícones por tipo de relação
   const relationIcons = {
     genero: <MdCategory />,
     diretor: <FiUser />,
     dublador: <FiMic />,
     produtora: <FiBriefcase />,
     linguagem: <FiGlobe />,
-    pais: <FiGlobe />,
+    pais: <FiGlobe />
   };
 
   return (
@@ -120,7 +121,6 @@ const MovieDetail = ({ user }) => {
       initial="hidden"
       animate="show"
     >
-      {/* Header */}
       <motion.div className="flex items-center justify-between mb-6" variants={fadeItem}>
         <button onClick={() => navigate('/')} className="btn btn-outline">
           ← Voltar
@@ -147,13 +147,13 @@ const MovieDetail = ({ user }) => {
         )}
       </motion.div>
 
-      {/* Gerenciar relações */}
       {showRelations && user.tipo === 'admin' ? (
         <motion.div className="flex flex-col gap-4" variants={fadeCard} initial="hidden" animate="show">
           <motion.div variants={fadeItem}>
             <h1 className="text-2xl font-bold mb-2">Gerenciar Relações</h1>
             <p className="text-muted">Gerencie os relacionamentos do filme: {movie.titulo}</p>
           </motion.div>
+
           <MovieRelations movieId={movie.id_filme} user={user} onUpdate={handleRelationsUpdate} />
         </motion.div>
       ) : (
@@ -168,7 +168,7 @@ const MovieDetail = ({ user }) => {
             </div>
           </motion.div>
 
-          {/* Informações */}
+          {/* Infos */}
           <motion.div className="lg:col-span-2" variants={fadeItem}>
             <div className="card p-6 shadow-md rounded-xl bg-gradient-to-r from-purple-700 via-pink-600 to-pink-400 text-white">
               <motion.h1 className="text-3xl font-bold mb-4" variants={fadeItem}>
@@ -186,13 +186,16 @@ const MovieDetail = ({ user }) => {
                 )}
               </motion.div>
 
-              {/* Info detalhadas */}
-              <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6" variants={{ hidden: {}, show: { transition: { staggerChildren: 0.08 } } }}>
+              <motion.div
+                className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6"
+                variants={{ hidden: {}, show: { transition: { staggerChildren: 0.08 } } }}
+              >
                 <motion.div className="space-y-4" variants={fadeItem}>
                   <div>
                     <h3 className="text-sm font-semibold text-white/70 mb-1">Orçamento</h3>
                     <p className="text-lg">{movie.orcamento ? formatCurrency(movie.orcamento) : 'Não informado'}</p>
                   </div>
+
                   <div>
                     <h3 className="text-sm font-semibold text-white/70 mb-1">Duração</h3>
                     <p className="text-lg">{movie.tempo_duracao ? formatDuration(movie.tempo_duracao) : 'Não informada'}</p>
@@ -204,6 +207,7 @@ const MovieDetail = ({ user }) => {
                     <h3 className="text-sm font-semibold text-white/70 mb-1">ID do Filme</h3>
                     <p className="text-lg font-mono">{movie.id_filme}</p>
                   </div>
+
                   {movie.poster_url && (
                     <div>
                       <h3 className="text-sm font-semibold text-white/70 mb-1">Poster</h3>
@@ -220,11 +224,14 @@ const MovieDetail = ({ user }) => {
                 </motion.div>
               </motion.div>
 
-              {/* Relações resumidas */}
+              {/* Relações Resumidas */}
               <motion.div className="border-t border-white/30 pt-6" variants={fadeItem}>
                 <h3 className="text-lg font-semibold mb-4">Informações Relacionadas</h3>
 
-                <motion.div className="grid grid-cols-2 md:grid-cols-3 gap-4" variants={{ hidden: {}, show: { transition: { staggerChildren: 0.07 } } }}>
+                <motion.div
+                  className="grid grid-cols-2 md:grid-cols-3 gap-4"
+                  variants={{ hidden: {}, show: { transition: { staggerChildren: 0.07 } } }}
+                >
                   {Object.entries(relations).map(([type, items]) => {
                     if (!items || items.length === 0) return null;
 
@@ -232,12 +239,18 @@ const MovieDetail = ({ user }) => {
                     const label = type.charAt(0).toUpperCase() + type.slice(1);
 
                     return (
-                      <motion.div key={type} className="bg-white/10 rounded-xl p-4 flex flex-col gap-2 shadow-sm hover:bg-white/20 transition" variants={fadeItem}>
+                      <motion.div
+                        key={type}
+                        className="bg-white/10 rounded-xl p-4 flex flex-col gap-2 shadow-sm hover:bg-white/20 transition"
+                        variants={fadeItem}
+                      >
                         <div className="flex items-center gap-2 text-white/90 font-semibold">
                           {icon}
                           <span>{label}</span>
                         </div>
-                        <div className="text-white/60 text-sm">{items.length} {items.length === 1 ? "item" : "itens"}</div>
+                        <div className="text-white/60 text-sm">
+                          {items.length} {items.length === 1 ? "item" : "itens"}
+                        </div>
                       </motion.div>
                     );
                   })}
