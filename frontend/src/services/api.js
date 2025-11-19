@@ -20,7 +20,7 @@ class ApiService {
     const config = {
       headers: {
         "Content-Type": "application/json",
-        ...(options.headers || {})
+        ...(options.headers || {}),
       },
       ...options,
     };
@@ -46,9 +46,9 @@ class ApiService {
     return data;
   }
 
-  // ------------------------------------
+  // ================================
   // AUTH
-  // ------------------------------------
+  // ================================
 
   async login(username, password) {
     const data = await this.request("/login", {
@@ -56,7 +56,7 @@ class ApiService {
       body: JSON.stringify({ username, password }),
     });
     this.setToken(data.token);
-    return data;
+    return data; // { token, user }
   }
 
   async register(username, email, password) {
@@ -77,9 +77,9 @@ class ApiService {
     return this.request("/login-check");
   }
 
-  // ------------------------------------
-  // CRUD global
-  // ------------------------------------
+  // ================================
+  // CRUD genérico
+  // ================================
 
   async getEntities(entity) {
     return this.request(`/${entity}`);
@@ -109,9 +109,9 @@ class ApiService {
     });
   }
 
-  // ------------------------------------
+  // ================================
   // RELAÇÕES DE FILME
-  // ------------------------------------
+  // ================================
 
   async getMovieRelations(movieId) {
     const relations = {};
@@ -137,45 +137,41 @@ class ApiService {
   }
 
   async addMovieRelation(movieId, relationType, entityId) {
+    // relationType: "genero", "diretor", etc.
     return this.request(`/filme_${relationType}`, {
       method: "POST",
       body: JSON.stringify({
-        id_filme: movieId,
-        [`id_${relationType}`]: entityId,
+        id_filme: parseInt(movieId, 10),
+        [`id_${relationType}`]: parseInt(entityId, 10),
       }),
     });
   }
 
   async removeMovieRelation(movieId, relationType, entityId) {
-    return this.request(`/filme_${relationType}/${movieId}?remove=${entityId}`, {
-      method: "DELETE",
-    });
+    return this.request(
+      `/filme_${relationType}/${movieId}?remove=${entityId}`,
+      {
+        method: "DELETE",
+      }
+    );
   }
-
-  // ------------------------------------
-  // UPDATE COMPLETO DE RELAÇÕES (full replace)
-  // ------------------------------------
 
   async updateMovieRelations(movieId, relations) {
     const relationTypes = Object.keys(relations);
-
-    // 1. Carrega as relações atuais
     const current = await this.getMovieRelations(movieId);
 
-    // 2. Remove todas as relações antigas
+    // remove todas as relações antigas
     for (const type of relationTypes) {
       const oldList = current[type] || [];
-
       for (const rel of oldList) {
         const relId = rel[`id_${type}`];
         await this.removeMovieRelation(movieId, type, relId);
       }
     }
 
-    // 3. Adiciona as novas relações
+    // adiciona novas relações
     for (const type of relationTypes) {
       const items = relations[type] || [];
-
       for (const rel of items) {
         const relId = rel[`id_${type}`];
         await this.addMovieRelation(movieId, type, relId);
@@ -185,22 +181,12 @@ class ApiService {
     return true;
   }
 
-  // ------------------------------------
-  // CRIAR FILME + RELAÇÕES
-  // ------------------------------------
-
   async createMovieWithRelations(data, relations) {
     const movie = await this.createEntity("filme", data);
     const movieId = movie.id;
-
     await this.updateMovieRelations(movieId, relations);
-
     return movieId;
   }
-
-  // ------------------------------------
-  // ATUALIZAR FILME + RELAÇÕES
-  // ------------------------------------
 
   async updateMovieWithRelations(movieId, data, relations) {
     await this.updateEntity("filme", movieId, data);
@@ -208,27 +194,26 @@ class ApiService {
     return movieId;
   }
 
+  // ================================
+  // SOLICITAÇÕES (se quiser usar depois)
+  // ================================
 
-    // ------------------------------------
-  // SOLICITAÇÕES
-  // ------------------------------------
-async requestAdminUpgrade() {
-  return this.request("/solicitacao-admin", {
-    method: "POST"
-  });
-}
+  async requestAdminUpgrade() {
+    return this.request("/solicitacao-admin", {
+      method: "POST",
+    });
+  }
 
-async getAdminRequests() {
-  return this.request("/solicitacoes");
-}
+  async getAdminRequests() {
+    return this.request("/solicitacoes");
+  }
 
-async updateAdminRequest(id, status) {
-  return this.request(`/solicitacao-admin/${id}`, {
-    method: "PUT",
-    body: JSON.stringify({ status })
-  });
-}
-
+  async updateAdminRequest(id, status) {
+    return this.request(`/solicitacao-admin/${id}`, {
+      method: "PUT",
+      body: JSON.stringify({ status }),
+    });
+  }
 }
 
 export const apiService = new ApiService();

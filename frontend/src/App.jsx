@@ -5,62 +5,75 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
+
 import { apiService } from "./services/api";
+
+// Common
 import Navigation from "./components/Common/Navigation";
+
+// Auth
 import Login from "./components/Auth/Login";
 import Register from "./components/Auth/Register";
+
+// Movies
 import MovieList from "./components/Movies/MovieList";
 import MovieDetail from "./components/Movies/MovieDetail";
 import MovieEdit from "./components/Movies/MovieEdit";
+
+// Genres
 import GenreList from "./components/Genres/GenreList";
+
+// Countries
 import CountryList from "./components/Countries/CountryList";
+
+// Studios (Produtoras)
 import StudioList from "./components/Studios/StudioList";
+
+// Languages
 import LanguageList from "./components/Languages/LanguageList";
+
+// Directors
 import DirectorList from "./components/Directors/DirectorList";
+
+// Actors (Dubladores)
 import ActorList from "./components/Actors/ActorList";
+
 import "./styles/global.css";
 
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Recupera sessão no carregamento
   useEffect(() => {
     const token = localStorage.getItem("authToken");
-    if (token) {
-      apiService
-        .request("/login-check", { method: "GET" })
-        .then((data) => {
-          setUser(data.user);
-        })
-        .catch(() => {
-          localStorage.removeItem("authToken");
-        })
-        .finally(() => setLoading(false));
-    } else {
+
+    if (!token) {
       setLoading(false);
+      return;
     }
+
+    apiService
+      .request("/login-check", { method: "GET" })
+      .then((data) => setUser(data.user))
+      .catch(() => localStorage.removeItem("authToken"))
+      .finally(() => setLoading(false));
   }, []);
 
-  const handleLogin = (userData) => {
-    setUser(userData);
-  };
-
-  const handleRegister = (userData) => {
-    setUser(userData);
-  };
-
+  // Callbacks
+  const handleLogin = (data) => setUser(data.user);
+  const handleRegister = (data) => setUser(data.user);
   const handleLogout = () => {
     apiService.logout();
     setUser(null);
   };
 
-  const ProtectedRoute = ({ children }) => {
-    return user ? children : <Navigate to="/login" />;
-  };
+  // Guards
+  const ProtectedRoute = ({ children }) =>
+    user ? children : <Navigate to="/login" />;
 
-  const AdminRoute = ({ children }) => {
-    return user && user.tipo === "admin" ? children : <Navigate to="/" />;
-  };
+  const AdminRoute = ({ children }) =>
+    user && user.tipo === "admin" ? children : <Navigate to="/" />;
 
   if (loading) {
     return (
@@ -77,7 +90,7 @@ function App() {
 
         <main>
           <Routes>
-            {/* Rotas públicas */}
+            {/* LOGIN */}
             <Route
               path="/login"
               element={
@@ -94,6 +107,7 @@ function App() {
               }
             />
 
+            {/* REGISTER */}
             <Route
               path="/register"
               element={
@@ -108,7 +122,7 @@ function App() {
               }
             />
 
-            {/* Rotas protegidas - CRUD Principal */}
+            {/* MOVIES */}
             <Route
               path="/"
               element={
@@ -136,7 +150,7 @@ function App() {
               }
             />
 
-            {/* Rotas para entidades relacionadas */}
+            {/* GENRES */}
             <Route
               path="/generos"
               element={
@@ -146,6 +160,7 @@ function App() {
               }
             />
 
+            {/* COUNTRIES */}
             <Route
               path="/paises"
               element={
@@ -155,6 +170,7 @@ function App() {
               }
             />
 
+            {/* STUDIOS / PRODUTORAS */}
             <Route
               path="/produtoras"
               element={
@@ -164,6 +180,7 @@ function App() {
               }
             />
 
+            {/* LANGUAGES */}
             <Route
               path="/idiomas"
               element={
@@ -173,6 +190,7 @@ function App() {
               }
             />
 
+            {/* DIRECTORS */}
             <Route
               path="/diretores"
               element={
@@ -182,6 +200,7 @@ function App() {
               }
             />
 
+            {/* ACTORS / DUBLADORES */}
             <Route
               path="/dubladores"
               element={
@@ -191,7 +210,7 @@ function App() {
               }
             />
 
-            {/* Rota padrão */}
+            {/* DEFAULT */}
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </main>

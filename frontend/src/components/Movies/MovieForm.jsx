@@ -34,9 +34,6 @@ const MovieForm = ({ movie, movieId, onClose }) => {
   const [loadingMovie, setLoadingMovie] = useState(!!movieId);
   const [error, setError] = useState("");
 
-  // -------------------------------------------------
-  // INPUT CHANGE (Faltava isso no seu código!)
-  // -------------------------------------------------
   const handleChange = (e) => {
     setFormData(prev => ({
       ...prev,
@@ -44,9 +41,6 @@ const MovieForm = ({ movie, movieId, onClose }) => {
     }));
   };
 
-  // -------------------------------------------------
-  // LOAD INITIAL DATA
-  // -------------------------------------------------
   useEffect(() => {
     if (movieId) loadMovieData();
     loadAvailableEntities();
@@ -120,9 +114,6 @@ const MovieForm = ({ movie, movieId, onClose }) => {
     }
   };
 
-  // -------------------------------------------------
-  // RELATION TOGGLE
-  // -------------------------------------------------
   const handleRelationChange = (relationType, entityId, checked) => {
     setRelations((prev) => {
       const current = prev[relationType] || [];
@@ -143,9 +134,6 @@ const MovieForm = ({ movie, movieId, onClose }) => {
     });
   };
 
-  // -------------------------------------------------
-  // SUBMIT
-  // -------------------------------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -159,10 +147,8 @@ const MovieForm = ({ movie, movieId, onClose }) => {
       };
 
       if (!movieId) {
-        // CREATE + RELATIONS
         await apiService.createMovieWithRelations(payload, relations);
       } else {
-        // UPDATE + RELATIONS
         await apiService.updateMovieWithRelations(movieId, payload, relations);
       }
 
@@ -174,9 +160,6 @@ const MovieForm = ({ movie, movieId, onClose }) => {
     }
   };
 
-  // -------------------------------------------------
-  // HELPER TO DISPLAY ENTITY NAME
-  // -------------------------------------------------
   const getEntityName = (type, id) => {
     const found = availableEntities[type]?.find(
       (e) => e[`id_${type}`] === id
@@ -205,10 +188,6 @@ const MovieForm = ({ movie, movieId, onClose }) => {
 
   const currentYear = new Date().getFullYear();
 
-  // -------------------------------------------------
-  // UI
-  // -------------------------------------------------
-
   if (loadingMovie) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
@@ -218,9 +197,8 @@ const MovieForm = ({ movie, movieId, onClose }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+    <div className="bg-black bg-opacity-50 flex justify-center items-center z-50">
       <div className="card w-full max-h-[90vh] overflow-y-auto">
-
         <div className="card-header flex justify-between items-center">
           <h2 className="text-xl">
             {movieId ? "Editar Filme" : "Adicionar Filme"}
@@ -232,10 +210,7 @@ const MovieForm = ({ movie, movieId, onClose }) => {
           {error && <div className="alert alert-error mb-4">{error}</div>}
 
           <form onSubmit={handleSubmit}>
-
-            {/* CAMPOS PRINCIPAIS */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-
               <div className="form-group">
                 <label>Título *</label>
                 <input
@@ -295,7 +270,6 @@ const MovieForm = ({ movie, movieId, onClose }) => {
               </div>
             </div>
 
-            {/* RELACIONAMENTOS */}
             <div className="border-t pt-6">
               <h3 className="text-lg mb-4 font-semibold">Relacionamentos</h3>
 
@@ -333,14 +307,17 @@ const MovieForm = ({ movie, movieId, onClose }) => {
             </div>
 
             <div className="flex justify-end gap-2 mt-6">
-              <button type="button" className="btn btn-outline" onClick={onClose}>
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={onClose}
+              >
                 Cancelar
               </button>
               <button type="submit" className="btn btn-primary" disabled={loading}>
                 {loading ? "Salvando..." : movieId ? "Atualizar" : "Criar"}
               </button>
             </div>
-
           </form>
         </div>
       </div>

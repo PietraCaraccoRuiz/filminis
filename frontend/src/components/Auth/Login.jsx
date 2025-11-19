@@ -1,33 +1,32 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { apiService } from '../../services/api';
-import logo from '../../assets/logo.svg';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { apiService } from "../../services/api";
+import logo from "../../assets/logo.svg";
 
 const Login = ({ onLogin, onSwitchToRegister }) => {
-  const [formData, setFormData] = useState({
-    username: '',
-    password: ''
-  });
-
+  const [formData, setFormData] = useState({ username: "", password: "" });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
-      const result = await apiService.login(formData.username, formData.password);
+      const result = await apiService.login(
+        formData.username,
+        formData.password
+      );
 
       if (!result?.user || !result?.token) {
-        throw new Error("Falha inesperada no handshake com o backend.");
+        throw new Error("Falha inesperada no login.");
       }
 
+      // 🔥 aqui: manda o pacote, App extrai user
       onLogin(result);
-
     } catch (err) {
-      setError(err.message || 'Credenciais inválidas.');
+      setError(err.message || "Credenciais inválidas.");
     } finally {
       setLoading(false);
     }
@@ -37,26 +36,22 @@ const Login = ({ onLogin, onSwitchToRegister }) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
   const demoAccounts = [
-    { username: 'admin', password: 'admin123', type: 'Admin' },
-    { username: 'usuario1', password: 'user123', type: 'User' }
+    { username: "admin", password: "admin123", type: "Admin" },
+    { username: "usuario1", password: "user123", type: "User" },
   ];
 
   const fillDemo = (acc) => {
-    setFormData({
-      username: acc.username,
-      password: acc.password
-    });
+    setFormData({ username: acc.username, password: acc.password });
   };
 
-  // Animações padrão do design system
   const containerVariants = {
     hidden: { opacity: 0, y: 50, filter: "blur(10px)" },
     visible: {
       opacity: 1,
       y: 0,
       filter: "blur(0px)",
-      transition: { duration: 0.6, ease: "easeOut", staggerChildren: 0.1 }
-    }
+      transition: { duration: 0.6, ease: "easeOut", staggerChildren: 0.1 },
+    },
   };
 
   const itemVariants = {
@@ -65,8 +60,8 @@ const Login = ({ onLogin, onSwitchToRegister }) => {
       opacity: 1,
       y: 0,
       filter: "blur(0px)",
-      transition: { duration: 0.4 }
-    }
+      transition: { duration: 0.4 },
+    },
   };
 
   return (
@@ -86,7 +81,6 @@ const Login = ({ onLogin, onSwitchToRegister }) => {
         </motion.div>
 
         <div className="card-body">
-
           {error && (
             <motion.div
               initial={{ opacity: 0, x: -20 }}
@@ -163,7 +157,6 @@ const Login = ({ onLogin, onSwitchToRegister }) => {
               Criar conta
             </motion.button>
           </motion.div>
-
         </div>
       </motion.div>
     </div>

@@ -16,7 +16,6 @@ const Register = ({ onRegister, onSwitchToLogin }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setLoading(true);
     setError("");
     setSuccess("");
@@ -28,9 +27,7 @@ const Register = ({ onRegister, onSwitchToLogin }) => {
         formData.password
       );
 
-      if (!reg?.id) {
-        throw new Error("Falha no registro");
-      }
+      if (!reg?.id) throw new Error("Falha no registro");
 
       const login = await apiService.login(
         formData.username,
@@ -38,12 +35,11 @@ const Register = ({ onRegister, onSwitchToLogin }) => {
       );
 
       if (!login?.user) {
-        throw new Error("Conta criada, mas erro ao fazer login automático.");
+        throw new Error("Conta criada, mas erro ao logar.");
       }
 
       setSuccess("Conta criada com sucesso!");
-      onRegister(login.user);
-
+      onRegister(login); // manda o pacote inteiro
     } catch (err) {
       setError(err.message);
     } finally {
@@ -64,13 +60,13 @@ const Register = ({ onRegister, onSwitchToLogin }) => {
       opacity: 1,
       y: 0,
       filter: "blur(0px)",
-      transition: { duration: 0.6, staggerChildren: 0.1 }
-    }
+      transition: { duration: 0.6, staggerChildren: 0.1 },
+    },
   };
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } }
+    visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
   };
 
   return (
@@ -90,7 +86,6 @@ const Register = ({ onRegister, onSwitchToLogin }) => {
         </motion.div>
 
         <div className="card-body">
-
           {error && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -177,7 +172,6 @@ const Register = ({ onRegister, onSwitchToLogin }) => {
               Já tem uma conta? Fazer login
             </motion.button>
           </motion.div>
-
         </div>
       </motion.div>
     </div>
